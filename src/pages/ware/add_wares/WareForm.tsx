@@ -58,7 +58,7 @@ const WareForm: React.FC<FormProps> = ({ formData, brands, categories, sizes, on
         <textarea name="description" value={formData.description} onChange={onChange} className="w-full p-2 border border-gray-300 rounded" placeholder="About Product" />
       </div>
 
-      <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Add Ware</button>
+      <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Add Product</button>
     </form>
   );
 };

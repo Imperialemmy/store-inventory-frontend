@@ -14,6 +14,7 @@ const AddWare: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [sizes, setSizes] = useState<Size[]>([]);
   const navigate = useNavigate();
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     Promise.all([
@@ -51,13 +52,18 @@ const AddWare: React.FC = () => {
       .post('/wares/', payload)
       .then(() => navigate('/add-ware'))
       .catch((error) => {
-        console.error('Error adding ware:', error.response?.data || error.message);
+      console.error('Error adding ware:', error.response?.data || error.message);
       });
+      setMessage("Product Added successfully!");
+      setFormData({ name: '', brand: '', category: '', sizes: [], description: '' }); // Clear the form
+      // Optionally clear the message after 3 seconds     
+      setTimeout(() => setMessage(""), 3000);
   };
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl text-gray-700 mb-4">Add Ware</h2>
+      <h2 className="text-2xl text-gray-700 mb-4">Add Product</h2>
+      {message && <p className="mb-4 text-green-600">{message}</p>}
       <AddWareForm
         formData={formData}
         brands={brands}

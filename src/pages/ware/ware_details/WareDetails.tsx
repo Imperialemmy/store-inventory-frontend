@@ -128,6 +128,7 @@ useEffect(() => {
 
                   {/* Right side: buttons */}
                   <div className="flex gap-3 flex-shrink-0">
+                    {userRole.role === 'admin' && (
                     <button
                       onClick={() => {
                         setVariantToEdit(variant);
@@ -137,7 +138,9 @@ useEffect(() => {
                     >
                       Edit
                     </button>
-
+                    )}
+                    
+                    {userRole.role === 'admin' && (
                     <button
                       onClick={() => handleDeleteVariant(variant.id)}
                       className="px-3 py-1 text-sm rounded bg-red-500 text-white hover:bg-red-600"
@@ -145,6 +148,8 @@ useEffect(() => {
                       Delete
                     </button>
                       
+                    )}
+                    
                       {userRole.role === 'admin' && (
                     <button
                       onClick={() => {
@@ -175,6 +180,7 @@ useEffect(() => {
 
                           {/* Edit & Delete buttons for Batch */}
                           <div className="flex gap-2 mt-2">
+                          {userRole.role === 'admin' && (
                             <button
                               onClick={() => {
                                 setBatchToEdit(batch);
@@ -185,13 +191,16 @@ useEffect(() => {
                             >
                               Edit Batch
                             </button>
+                          )}
 
+                          {userRole.role === 'admin' && (
                             <button
                               onClick={() => handleDeleteBatch(batch.id)}
                               className="px-3 py-1 text-sm rounded bg-red-500 text-white hover:bg-red-600"
                             >
                               Delete Batch
                             </button>
+                          )}
                           </div>
                         </li>
                       ))}
