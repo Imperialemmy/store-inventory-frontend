@@ -40,7 +40,7 @@ const SignupForm: React.FC<Props> = ({ onSubmit, loading, error }) => {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-blue-600 text-white py-3 rounded-md shadow hover:bg-blue-700 transition"
+        className="w-full bg-blue-600 text-white py-2 rounded-md shadow hover:bg-blue-700 transition"
       >
         {loading ? "Signing up..." : "Sign Up"}
       </button>
