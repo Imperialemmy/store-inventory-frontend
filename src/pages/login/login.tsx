@@ -41,10 +41,25 @@ const Login = () => {
 
         <button
           type="submit"
-          className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition"
+          className="w-full bg-blue-600 text-white py-2 rounded-md shadow hover:bg-blue-700 transition"
         >
           Login
         </button>
+
+          {/* Forgot password link */}
+        <div className="text-center mt-3 space-y-1">
+          <a href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+            Forgot password?
+          </a>
+        </div>
+
+          {/* Sign up link */}
+        <div className= "text-center">
+          <span className="text-sm center text-gray-600">Don't have an account? </span>
+            <a href="/signup" className="text-sm text-blue-600 hover:underline">
+              Create one
+            </a>
+        </div>
       </form>
     </div>
   );
