@@ -12,7 +12,7 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
   label, name, type = "text", value, onChange, placeholder, required = false,
 }) => (
   <div className="space-y-1">
-    <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
+    <label htmlFor={name} className="block text-sm font-medium text-gray-900">{label}</label>
     <input
       id={name}
       name={name}
