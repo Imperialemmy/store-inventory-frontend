@@ -12,10 +12,10 @@ const Login = () => {
   } = useLogin();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form
+    <div className= {styles.loginBackground}>
+      <form 
         onSubmit={handleLogin}
-        className="bg-white p-6 rounded-xl shadow-md w-full max-w-md"
+        className="backdrop-blur-md bg-white/70 p-6 rounded-xl shadow-md w-full max-w-md"
       >
         <h2 className={`text-2xl font-semibold mb-4 text-center ${styles.title}`}>Akinfolu foods</h2>
 
@@ -24,7 +24,7 @@ const Login = () => {
         <input
           type="text"
           placeholder="Username"
-          className="w-full mb-3 px-4 py-2 border rounded-md"
+          className="w-full mb-3 px-4 py-2 border rounded-sm"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
@@ -41,7 +41,7 @@ const Login = () => {
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded-md shadow hover:bg-blue-700 transition"
+          className="w-full bg-blue-500/80 backdrop-blur-md text-white py-2 rounded-md shadow hover:bg-blue-500/100 transition"
         >
           Login
         </button>
