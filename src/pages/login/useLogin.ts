@@ -7,6 +7,7 @@ const useLogin = () => {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -33,10 +34,12 @@ const useLogin = () => {
   return {
     username,
     password,
+    showPassword,
     error,
     setUsername,
     setPassword,
     handleLogin,
+    setShowPassword
   };
 };
 
