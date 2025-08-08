@@ -9,7 +9,6 @@ import AddBrand from './pages/brand/add_brands/AddBrand';
 import AddCategory from './pages/category/add_categories/AddCategory';
 import AddSize from './pages/size/add_sizes/AddSize';
 import UpdateStock from './pages/UpdateStock';
-
 import BrandList from './pages/brand/view_brands/BrandList';
 import BrandsWithWares from './pages/brand/view_brands/BrandsWithWares';
 import WareDetail from './pages/ware/ware_details/WareDetails';
@@ -20,12 +19,14 @@ import Wares from './pages/ware/view_wares/Wares';
 import WareVariantForm from './pages/WareVariant';
 import ErrorBoundary from './pages/ErrorBoundary';
 import Login from './pages/login/login';
+import SignupPage from './pages/signup/SignupPage';
 
 import { Outlet } from 'react-router-dom';
 
 const ProtectedRoutesLayout = () => (
   <div className="bg-gray-100 min-h-screen">
     <NavBar />
+    
     <div className="mt-6 px-4">
       <h1
         className="text-4xl text-gray-900 text-center mb-6 font-regular"
@@ -44,7 +45,7 @@ const App: React.FC = () => {
       <Routes>
         {/* Public route */}
         <Route path="/" element={<Navigate to="/login"/>} />
-        
+        <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<Login />} />
 
         {/* Protected Routes */}
