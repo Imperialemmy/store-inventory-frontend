@@ -20,13 +20,14 @@ import WareVariantForm from './pages/WareVariant';
 import ErrorBoundary from './pages/ErrorBoundary';
 import Login from './pages/login/login';
 import SignupPage from './pages/signup/SignupPage';
+import Footer from './features/layout/footer/Footer';
 
 import { Outlet } from 'react-router-dom';
 
 const ProtectedRoutesLayout = () => (
   <div className="bg-gray-100 min-h-screen">
     <NavBar />
-    
+    <Footer />
     <div className="mt-6 px-4">
       <h1
         className="text-4xl text-gray-900 text-center mb-6 font-regular"
