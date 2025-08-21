@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedLayout from './components/ProtectedLayout';
-
 import NavBar from './features/layout/NavBar';
 import Dashboard from './pages/home/Home';
 import AddWare from './pages/ware/add_wares/AddWare';
