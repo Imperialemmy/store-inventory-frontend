@@ -10,7 +10,7 @@ const NavLinkItem: React.FC<NavLinkItemProps> = ({ to, children }) => {
   return (
     <Link
       to={to}
-      className="text-sm text-gray-800 hover:text-black transition-colors duration-200"
+      className="text-sm text-gray-800 hover:text-blue-500 transition-colors duration-200"
     >
       {children}
     </Link>
