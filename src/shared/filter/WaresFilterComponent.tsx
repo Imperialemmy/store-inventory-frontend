@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../services/api";
 
 interface Ware {
   id: number;
@@ -19,16 +19,25 @@ const WaresByFilter: React.FC<WaresByFilterProps> = ({ title, fetchUrl }) => {
   const navigate = useNavigate();
   const itemsPerPage = 5;
 
-  useEffect(() => {
-    axios
-      .get(fetchUrl)
-      .then((res) => setWares(res.data.results || res.data))
-      .catch((err) => console.error("Error fetching wares:", err));
-  }, [fetchUrl]);
+useEffect(() => {
+  api
+    .get(fetchUrl)
+    .then((res) => {
+      const payload = res.data;
+      const list = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.results)
+        ? payload.results
+        : [];
+      setWares(list as Ware[]);
+    })
+    .catch((err) => console.error("Error fetching wares:", err));
+}, [fetchUrl]);
 
-  const filtered = wares.filter((w) =>
-    w.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+const filtered = (Array.isArray(wares) ? wares : []).filter((w) =>
+  (w.name ?? "").toLowerCase().includes(searchQuery.toLowerCase())
+);
+
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginated = filtered.slice(startIndex, startIndex + itemsPerPage);
