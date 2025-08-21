@@ -8,7 +8,6 @@ import AddWare from './pages/ware/add_wares/AddWare';
 import AddBrand from './pages/brand/add_brands/AddBrand';
 import AddCategory from './pages/category/add_categories/AddCategory';
 import AddSize from './pages/size/add_sizes/AddSize';
-import UpdateStock from './pages/UpdateStock';
 import BrandList from './pages/brand/view_brands/BrandList';
 import BrandsWithWares from './pages/brand/view_brands/BrandsWithWares';
 import WareDetail from './pages/ware/ware_details/WareDetails';
@@ -64,7 +63,6 @@ const App: React.FC = () => {
             <Route path="/sizes" element={<SizeList />} />
             <Route path="/sizes/add" element={<AddSize />} />
             <Route path="/wares" element={<Wares />} />
-            <Route path="/update-stock" element={<UpdateStock />} />
             <Route path="/wares/:wareId/variants/new" element={<WareVariantForm />} />
             <Route path="/wares/:wareId/variants/:variantId/edit" element={<WareVariantForm />} />
           </Route>
