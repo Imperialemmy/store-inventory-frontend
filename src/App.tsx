@@ -23,20 +23,26 @@ import Footer from './features/layout/footer/Footer';
 import { Outlet } from 'react-router-dom';
 
 const ProtectedRoutesLayout = () => (
-  <div className="bg-gray-100 min-h-screen">
+  <div className="bg-gray-100 min-h-screen flex flex-col">
+    {/* Navbar at the top */}
     <NavBar />
-    <Footer />
-    <div className="mt-6 px-4">
+
+    {/* Main content grows and pushes footer down */}
+    <main className="flex-grow mt-6 px-4">
       <h1
         className="text-4xl text-gray-900 text-center mb-6 font-regular"
         style={{ fontFamily: "'Segoe Print', cursive, sans-serif" }}
-        >
+      >
         AkinFolu Foods
       </h1>
-      <Outlet /> {/* Render nested routes here */}
-    </div>
+      <Outlet /> {/* Nested routes */}
+    </main>
+
+    {/* Footer sits at the bottom */}
+    <Footer />
   </div>
 );
+
 
 const App: React.FC = () => {
   return (
