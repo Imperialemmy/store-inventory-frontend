@@ -23,7 +23,7 @@ function GenericList<T>({
   enableSelection = false,
   onItemClick,
   renderToolbar,
-  itemsPerPage = 5,
+  itemsPerPage = 10,
 }: GenericListProps<T>) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectionMode, setSelectionMode] = useState(false);
