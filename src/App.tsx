@@ -1,7 +1,7 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedLayout from './components/ProtectedLayout';
-import NavBar from './features/layout/NavBar';
+import AdminRoute from './components/AdminRoute';
+import AppShell from './features/layout/AppShell';
 import Dashboard from './pages/home/Home';
 import AddWare from './pages/ware/add_wares/AddWare';
 import AddBrand from './pages/brand/add_brands/AddBrand';
@@ -18,33 +18,7 @@ import WareVariantForm from './pages/WareVariant';
 import ErrorBoundary from './pages/ErrorBoundary';
 import Login from './pages/login/login';
 import SignupPage from './pages/signup/SignupPage';
-import Footer from './features/layout/footer/Footer';
-
-import { Outlet } from 'react-router-dom';
-
-const ProtectedRoutesLayout = () => (
-  <div className="bg-gray-100 min-h-screen flex flex-col">
-    {/* Navbar at the top */}
-    <NavBar />
-
-    {/* Main content grows and pushes footer down */}
-    <main className="flex-grow mt-6 px-4">
-      <h1
-        className="text-4xl text-gray-900 text-center mb-6 font-regular"
-        style={{ fontFamily: "'Segoe Print', cursive, sans-serif" }}
-      >
-        AkinFolu Foods
-      </h1>
-      <Outlet /> {/* Nested routes */}
-    </main>
-
-    {/* Footer sits at the bottom */}
-    <Footer />
-  </div>
-);
-
-
-const App: React.FC = () => {
+const App = () => {
   return (
     <Router>
       <Routes>
@@ -55,21 +29,23 @@ const App: React.FC = () => {
 
         {/* Protected Routes */}
         <Route element={<ProtectedLayout />}>
-          <Route element={<ProtectedRoutesLayout />}>
+          <Route element={<AppShell />}>
             <Route path="/home" element={<Dashboard />} />
-            <Route path="/add-ware" element={<ErrorBoundary><AddWare /></ErrorBoundary>} />
             <Route path="/brands" element={<BrandList />} />
-            <Route path="/brands/add" element={<AddBrand />} />
             <Route path="/brands/:brandId" element={<BrandsWithWares />} />
             <Route path="/wares/:wareId" element={<WareDetail />} />
             <Route path="/categories" element={<CategoryList />} />
-            <Route path="/categories/add" element={<AddCategory />} />
             <Route path="/categories/:categoryId" element={<CategoryWares />} />
             <Route path="/sizes" element={<SizeList />} />
-            <Route path="/sizes/add" element={<AddSize />} />
             <Route path="/wares" element={<Wares />} />
-            <Route path="/wares/:wareId/variants/new" element={<WareVariantForm />} />
-            <Route path="/wares/:wareId/variants/:variantId/edit" element={<WareVariantForm />} />
+            <Route element={<AdminRoute />}>
+              <Route path="/add-ware" element={<ErrorBoundary><AddWare /></ErrorBoundary>} />
+              <Route path="/brands/add" element={<AddBrand />} />
+              <Route path="/categories/add" element={<AddCategory />} />
+              <Route path="/sizes/add" element={<AddSize />} />
+              <Route path="/wares/:wareId/variants/new" element={<WareVariantForm />} />
+              <Route path="/wares/:wareId/variants/:variantId/edit" element={<WareVariantForm />} />
+            </Route>
           </Route>
         </Route>
 

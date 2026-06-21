@@ -11,9 +11,11 @@ interface ListPageProps<T extends { id: number }> {
   itemKey: (item: T) => number;
   itemNameSelector: (item: T) => string;
   navigateTo: (id: number) => string;
+  createPath?: string;
+  createLabel?: string;
 }
 
-function ListPage<T extends { id: number }>({ title, apiEndpoint, itemKey, itemNameSelector, navigateTo }: ListPageProps<T>) {
+function ListPage<T extends { id: number }>({ title, apiEndpoint, itemKey, itemNameSelector, navigateTo, createPath, createLabel }: ListPageProps<T>) {
   const [items, setItems] = useState<T[]>([]);
   const userRole = useUserRole();
   const navigate = useNavigate();
@@ -39,6 +41,8 @@ function ListPage<T extends { id: number }>({ title, apiEndpoint, itemKey, itemN
   return (
     <GenericList
       title={title}
+      createPath={userRole.isAdmin ? createPath : undefined}
+      createLabel={createLabel}
       items={items}
       itemKey={itemKey}
       onItemClick={(id: string | number) => navigate(navigateTo(Number(id)))}
@@ -55,8 +59,8 @@ function ListPage<T extends { id: number }>({ title, apiEndpoint, itemKey, itemN
         )
       }
       renderItem={(item, isSelected, toggleSelect, selectionMode) => (
-        <div className="flex justify-between items-center p-4 border rounded-md shadow-sm bg-white hover:bg-gray-100 transition cursor-pointer">
-          <div className="flex items-center space-x-2">
+        <div className="inventory-list__content">
+          <div className="inventory-list__name">
             {selectionMode && (
               <input
                 type="checkbox"
@@ -65,8 +69,9 @@ function ListPage<T extends { id: number }>({ title, apiEndpoint, itemKey, itemN
                 onClick={(e) => e.stopPropagation()}
               />
             )}
-            <span className="text-gray-700 cursor-pointer">{itemNameSelector(item)}</span>
+            <span>{itemNameSelector(item)}</span>
           </div>
+          <span className="inventory-list__open">Open record →</span>
         </div>
       )}
     />

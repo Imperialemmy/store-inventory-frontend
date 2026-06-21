@@ -78,13 +78,13 @@ const WareVariantForm = () => {
 
     try {
       if (variantId) {
-        await api.put(`/ware-variants/${variantId}/`, payload);
+        await api.put(`/variants/${variantId}/`, payload);
         alert("Variant updated successfully");
       } else {
-        await api.post("/ware-variants/", payload);
+        await api.post("/variants/", payload);
         alert("Variant created successfully");
       }
-      navigate(`/wares/${wareId}/variants`);
+      navigate(`/wares/${wareId}`);
     } catch (error) {
       console.error("Save failed", error);
       alert("Failed to save variant");

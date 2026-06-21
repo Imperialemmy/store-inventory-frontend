@@ -13,6 +13,8 @@ export default function WareList() {
       itemKey={(item) => item.id}
       itemNameSelector={(item) => item.name}
       navigateTo={(id) => `/wares/${id}`}
+      createPath="/add-ware"
+      createLabel="Add product"
     />
   );
 }

@@ -63,6 +63,9 @@ const SizeList = () => {
     <>
       <GenericList
         title="Sizes"
+        description="Reusable packaging measurements linked to products across the store."
+        createPath={userRole.isAdmin ? "/sizes/add" : undefined}
+        createLabel="Add size"
         items={sizes}
         itemKey={(item) => item.id}
         enableSelection={userRole?.role === "admin"}
@@ -78,8 +81,8 @@ const SizeList = () => {
           />
         )}
         renderItem={(item, isSelected, toggleSelect, selectionMode) => (
-          <div className="flex justify-between items-center p-4 border rounded-md shadow-sm bg-white hover:bg-gray-100 transition cursor-pointer">
-            <div className="flex items-center space-x-2">
+          <div className="inventory-list__content">
+            <div className="inventory-list__name">
               {selectionMode && (
                 <input
                   type="checkbox"
@@ -92,12 +95,13 @@ const SizeList = () => {
               )}
               <label
                 htmlFor={`size-checkbox-${item.id}`}
-                className="text-gray-700 cursor-pointer"
+                className="cursor-pointer"
               >
                 {item.size} {item.size_unit} —{" "}
                 {item.wares.map((w) => w.name).join(", ")}
               </label>
             </div>
+            <span className="inventory-list__open">View products →</span>
           </div>
         )}
       />
