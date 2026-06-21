@@ -4,6 +4,21 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import type { SignupData } from './SignupForm';
 
+type ValidationPayload = Record<string, unknown>;
+
+const formatSignupError = (payload?: ValidationPayload) => {
+  if (!payload) return null;
+
+  return Object.entries(payload)
+    .flatMap(([field, value]) => {
+      const messages = Array.isArray(value) ? value : [value];
+      return messages
+        .filter((message): message is string => typeof message === 'string')
+        .map((message) => `${field.replace(/_/g, ' ')}: ${message}`);
+    })
+    .join(' ');
+};
+
 export const useSignup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,10 +31,10 @@ export const useSignup = () => {
       await signupUser(data);
       navigate('/login');
     } catch (err: unknown) {
-      const message = axios.isAxiosError<{ detail?: string }>(err)
-        ? err.response?.data?.detail
+      const message = axios.isAxiosError<ValidationPayload>(err)
+        ? formatSignupError(err.response?.data)
         : null;
-      setError(message || 'Account creation failed. Check your details and try again.');
+      setError(message || 'The signup request could not be completed. Check that the backend is running and try again.');
     } finally {
       setLoading(false);
     }
