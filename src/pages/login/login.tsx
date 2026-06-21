@@ -1,6 +1,7 @@
-import useLogin from "./useLogin";
-import styles from "./login.module.css";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { Link } from "react-router-dom";
+import styles from "./login.module.css";
+import useLogin from "./useLogin";
 
 const Login = () => {
   const {
@@ -15,69 +16,64 @@ const Login = () => {
   } = useLogin();
 
   return (
-    <div className= {styles.loginBackground}>
-      <form 
-        onSubmit={handleLogin}
-        className="backdrop-blur-md bg-white/70 p-6 rounded-xl shadow-md w-full max-w-md"
-      >
-        <h2 className={`text-2xl font-semibold mb-4 text-center ${styles.title}`}>Akinfolu foods</h2>
-
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-      <div className="relative w-full mb-4">
-        <input
-          type="text"
-          placeholder="Username"
-          className="w-full mb-3 px-4 py-2 border rounded-sm"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
+    <main className={styles.authPage}>
+      <section className={styles.authStory} aria-label="AkinFolu Foods">
+        <div className={styles.storyBrand}>AkinFolu Foods · Lagos</div>
+        <div className={styles.storyCopy}>
+          <h1>Know what is on every shelf.</h1>
+          <p>A calm, reliable control desk for products, pack sizes, stock batches, and the people keeping the store moving.</p>
         </div>
-      <div className="relative w-full mb-4">
-        <input
-          type={showPassword ? "text" : "password"}
-          placeholder="Password"
-          className="w-full mb-4 px-4 py-2 border rounded-md"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button
-        type="button"
-        onClick={() => setShowPassword(!showPassword)}
-        className="absolute right-3 top-2"
-      >
-        {showPassword ? (
-          <EyeSlashIcon className="h-5 w-5 text-gray-500" />
-        ) : (
-          <EyeIcon className="h-5 w-5 text-gray-500" />
-        )}
-      </button>
-    </div>
+        <div className={styles.storyFoot}>Food inventory, without the paper chase.</div>
+      </section>
 
-        <button
-          type="submit"
-          className="w-full bg-blue-500/80 backdrop-blur-md text-white py-2 rounded-md shadow hover:bg-blue-500/100 transition"
-        >
-          Login
-        </button>
+      <section className={styles.authPanel}>
+        <div className={styles.authCard}>
+          <p className={styles.authEyebrow}>Store access</p>
+          <h2>Welcome back</h2>
+          <p className={styles.authIntro}>Sign in to open today’s inventory desk.</p>
 
-          {/* Forgot password link */}
-        <div className="text-center mt-3 space-y-1">
-          <a href="/forgot-password" className="text-sm text-blue-600 hover:underline">
-            Forgot password?
-          </a>
+          <form className={styles.authForm} onSubmit={handleLogin}>
+            {error && <p className={styles.authError} role="alert">{error}</p>}
+            <label className={styles.authField}>
+              <span>Username</span>
+              <input
+                autoComplete="username"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                required
+              />
+            </label>
+
+            <label className={styles.authField}>
+              <span>Password</span>
+              <div className={styles.authInputWrap}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className={styles.passwordToggle}
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeSlashIcon width={19} /> : <EyeIcon width={19} />}
+                </button>
+              </div>
+            </label>
+
+            <button type="submit" className={styles.submitButton}>Open inventory desk</button>
+          </form>
+
+          <div className={styles.authLinks}>
+            <span>New to the team? <Link to="/signup">Create an account</Link></span>
+          </div>
         </div>
-
-          {/* Sign up link */}
-        <div className= "text-center">
-          <span className="text-sm center text-gray-600">Don't have an account? </span>
-            <a href="/signup" className="text-sm text-blue-600 hover:underline">
-              Create one
-            </a>
-        </div>
-      </form>
-    </div>
+      </section>
+    </main>
   );
 };
 

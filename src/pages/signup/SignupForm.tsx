@@ -2,9 +2,18 @@ import React from "react";
 import LabeledInput from "./LabeledInput";
 
 interface Props {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: SignupData) => void;
   loading: boolean;
   error: string | null;
+}
+
+export interface SignupData {
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  phone_number: string;
 }
 
 const SignupForm: React.FC<Props> = ({ onSubmit, loading, error }) => {
@@ -27,7 +36,7 @@ const SignupForm: React.FC<Props> = ({ onSubmit, loading, error }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 border-b border-gray-900/10 pb-12">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <LabeledInput label="User name" name="username" value={form.username} onChange={handleChange} required placeholder="e.g. akinfolu123" />
       <LabeledInput label="First name" name="first_name" value={form.first_name} onChange={handleChange} required placeholder="e.g. Ayomide"/>
       <LabeledInput label="Last name" name="last_name" value={form.last_name} onChange={handleChange} required placeholder="e.g. Adeeko"/>
@@ -35,12 +44,12 @@ const SignupForm: React.FC<Props> = ({ onSubmit, loading, error }) => {
       <LabeledInput label="Password" name="password" type="password" value={form.password} onChange={handleChange} required placeholder="password" />
       <LabeledInput label="Phone Number" name="phone_number" type="tel" value={form.phone_number} onChange={handleChange} required placeholder="e.g. 08012345678" />
 
-      {error && <p className="text-red-500">{error}</p>}
+      {error && <p className="notice notice--error" role="alert">{error}</p>}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-blue-500/80 backdrop-blur-md text-white py-2 rounded-md shadow hover:bg-blue-500/100 transition"
+        className="button button--primary w-full"
       >
         {loading ? "Signing up..." : "Sign Up"}
       </button>

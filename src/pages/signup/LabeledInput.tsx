@@ -11,8 +11,8 @@ interface LabeledInputProps {
 const LabeledInput: React.FC<LabeledInputProps> = ({
   label, name, type = "text", value, onChange, placeholder, required = false,
 }) => (
-  <div className="space-y-1">
-    <label htmlFor={name} className="block text-sm font-medium text-gray-900">{label}</label>
+  <div className="field">
+    <label htmlFor={name}>{label}</label>
     <input
       id={name}
       name={name}
@@ -21,7 +21,6 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
       onChange={onChange}
       placeholder={placeholder}
       required={required}
-      className="w-full px-4 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
     />
   </div>
 );

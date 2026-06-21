@@ -13,6 +13,8 @@ export default function CategoryList() {
       itemKey={(item) => item.id}
       itemNameSelector={(item) => item.name}
       navigateTo={(id) => `/categories/${id}`}
+      createPath="/categories/add"
+      createLabel="Add category"
     />
   );
 }

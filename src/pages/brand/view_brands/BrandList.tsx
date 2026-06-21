@@ -13,6 +13,8 @@ export default function BrandList() {
       itemKey={(item) => item.id}
       itemNameSelector={(item) => item.name}
       navigateTo={(id) => `/brands/${id}`}
+      createPath="/brands/add"
+      createLabel="Add brand"
     />
   );
 }

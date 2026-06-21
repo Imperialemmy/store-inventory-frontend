@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import AddWareForm from './WareForm';
+import { getResults, type PaginatedResponse } from '../../../utils/api';
+import PageHeader from '../../../components/ui/PageHeader';
 
 interface Brand { id: number; name: string }
 interface Category { id: number; name: string }
@@ -15,17 +17,19 @@ const AddWare: React.FC = () => {
   const [sizes, setSizes] = useState<Size[]>([]);
   const navigate = useNavigate();
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     Promise.all([
-      api.get<Brand[]>('/brands/'),
-      api.get<Category[]>('/categories/'),
-      api.get<Size[]>('/sizes/'),
+      api.get<Brand[] | PaginatedResponse<Brand>>('/brands/'),
+      api.get<Category[] | PaginatedResponse<Category>>('/categories/'),
+      api.get<Size[] | PaginatedResponse<Size>>('/sizes/'),
     ])
       .then(([brandsRes, catsRes, sizesRes]) => {
-        setBrands(brandsRes.data);
-        setCategories(catsRes.data);
-        setSizes(sizesRes.data);
+        setBrands(getResults(brandsRes.data));
+        setCategories(getResults(catsRes.data));
+        setSizes(getResults(sizesRes.data));
       })
       .catch((error) => console.error('Error fetching dropdowns:', error));
   }, []);
@@ -38,8 +42,11 @@ const AddWare: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
+    setMessage("");
+    setError("");
     const payload = {
       name: formData.name,
       brand: formData.brand ? Number(formData.brand) : null,
@@ -48,22 +55,23 @@ const AddWare: React.FC = () => {
       description: formData.description,
     };
 
-    api
-      .post('/wares/', payload)
-      .then(() => navigate('/add-ware'))
-      .catch((error) => {
-      console.error('Error adding ware:', error.response?.data || error.message);
-      });
+    try {
+      await api.post('/wares/', payload);
       setMessage("Product Added successfully!");
       setFormData({ name: '', brand: '', category: '', sizes: [], description: '' }); // Clear the form
-      // Optionally clear the message after 3 seconds     
-      setTimeout(() => setMessage(""), 3000);
+      navigate('/wares');
+    } catch {
+      setError('Nothing was saved. Check the product details and try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl text-gray-700 mb-4">Add Product</h2>
-      {message && <p className="mb-4 text-green-600">{message}</p>}
+    <div className="page-container page-container--narrow">
+      <PageHeader eyebrow="Product catalogue" title="New product" description="Create the product record first; stock and price variants can be added from its detail page." />
+      {message && <p className="notice notice--success">{message}</p>}
+      {error && <p className="notice notice--error" role="alert">{error}</p>}
       <AddWareForm
         formData={formData}
         brands={brands}
@@ -71,6 +79,7 @@ const AddWare: React.FC = () => {
         sizes={sizes}
         onChange={handleChange}
         onSubmit={handleSubmit}
+        saving={saving}
       />
     </div>
   );
