@@ -23,7 +23,8 @@ const VariantModal: React.FC<Props> = ({
 }) => {
   const [formData, setFormData] = useState({
     size: '',
-    price: '',
+    retail_price: '',
+    wholesale_price: '',
     is_available: true,
   });
 
@@ -31,13 +32,15 @@ const VariantModal: React.FC<Props> = ({
 
   useEffect(() => {
     if (variantToEdit) {
+      const v = variantToEdit as typeof variantToEdit & { retail_price?: string; wholesale_price?: string };
       setFormData({
         size: variantToEdit.size_detail.id.toString(),
-        price: variantToEdit.price,
+        retail_price: v.retail_price ?? variantToEdit.price ?? '',
+        wholesale_price: v.wholesale_price ?? '',
         is_available: variantToEdit.is_available,
       });
     } else {
-      setFormData({ size: '', price: '', is_available: true });
+      setFormData({ size: '', retail_price: '', wholesale_price: '', is_available: true });
     }
     setError('');
   }, [variantToEdit]);
@@ -57,7 +60,8 @@ const VariantModal: React.FC<Props> = ({
 
     const payload = {
       size: Number(formData.size),
-      price: formData.price,
+      retail_price: formData.retail_price || 0,
+      wholesale_price: formData.wholesale_price || 0,
       is_available: formData.is_available,
     };
 
@@ -110,11 +114,25 @@ const VariantModal: React.FC<Props> = ({
           </label>
 
           <label className="field">
-            <span>Price</span>
+            <span>Retail price (₦)</span>
             <input
               type="number"
-              name="price"
-              value={formData.price}
+              name="retail_price"
+              min={0}
+              step="0.01"
+              value={formData.retail_price}
+              onChange={handleChange}
+            />
+          </label>
+
+          <label className="field">
+            <span>Wholesale price (₦)</span>
+            <input
+              type="number"
+              name="wholesale_price"
+              min={0}
+              step="0.01"
+              value={formData.wholesale_price}
               onChange={handleChange}
             />
           </label>

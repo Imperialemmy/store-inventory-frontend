@@ -122,7 +122,8 @@ useEffect(() => {
                   {/* Left side: variant details */}
                   <div className="space-x-6 whitespace-nowrap">
                     <span><strong>Size:</strong> {variant.size_detail.size}{variant.size_detail.size_unit}</span>
-                    <span><strong>Price:</strong> {formatPrice(variant.price)}</span>
+                    <span><strong>Retail:</strong> {formatPrice((variant as typeof variant & { retail_price?: string }).retail_price ?? variant.price)}</span>
+                    <span><strong>Wholesale:</strong> {formatPrice((variant as typeof variant & { wholesale_price?: string }).wholesale_price ?? variant.price)}</span>
                     <span><strong>Available:</strong> {variant.is_available ? 'Yes' : 'No'}</span>
                   </div>
 
