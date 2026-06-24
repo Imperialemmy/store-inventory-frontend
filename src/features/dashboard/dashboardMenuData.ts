@@ -5,8 +5,8 @@ export const dropdownData = [
     logos: [
       '/logos/products/product2.png',
       '/logos/products/product3.png',
-      '/logos/products/product4.webp',
-      '/logos/products/product7.webp',
+      '/logos/products/product4.png',
+      '/logos/products/product7.png',
     ],
     description: 'Add or view all products in your inventory.',
     links: [
