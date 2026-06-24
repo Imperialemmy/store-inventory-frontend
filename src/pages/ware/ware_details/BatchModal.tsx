@@ -55,57 +55,59 @@ const BatchModal: React.FC<Props> = ({ isOpen, onClose, variantId, batchToEdit }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-        <h3 className="text-lg font-semibold mb-4">
+    <div className="modal-overlay fixed inset-0 flex items-center justify-center z-50">
+      <div className="glass-panel p-6 w-full max-w-md">
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--leaf-950)' }}>
           {batchToEdit ? 'Edit Batch' : 'Add Batch'}
         </h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Lot Number"
-            value={lotNumber}
-            onChange={(e) => setLotNumber(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-            required
-          />
-          <input
-            type="number"
-            placeholder="Quantity"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-            required
-          />
+        <form onSubmit={handleSubmit} className="form-grid">
+          <label className="field">
+            <span>Lot Number</span>
+            <input
+              type="text"
+              placeholder="Lot Number"
+              value={lotNumber}
+              onChange={(e) => setLotNumber(e.target.value)}
+              required
+            />
+          </label>
+          <label className="field">
+            <span>Quantity</span>
+            <input
+              type="number"
+              placeholder="Quantity"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              required
+            />
+          </label>
 
-          <label className="block font-medium mb-1">Manufacturing Date</label>
-          <input
-            type="date"
-            value={manufacturingDate}
-            onChange={(e) => setManufacturingDate(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-            required
-          />
+          <label className="field">
+            <span>Manufacturing Date</span>
+            <input
+              type="date"
+              value={manufacturingDate}
+              onChange={(e) => setManufacturingDate(e.target.value)}
+              required
+            />
+          </label>
 
-          <label className="block font-medium mb-1">Expiry Date</label>
-          <input
-            type="date"
-            placeholder="Expiry Date"
-            value={expiryDate}
-            onChange={(e) => setExpiryDate(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-            required
-          />
+          <label className="field">
+            <span>Expiry Date</span>
+            <input
+              type="date"
+              placeholder="Expiry Date"
+              value={expiryDate}
+              onChange={(e) => setExpiryDate(e.target.value)}
+              required
+            />
+          </label>
 
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-300 rounded"
-            >
+          <div className="form-actions">
+            <button type="button" onClick={onClose} className="button button--ghost">
               Cancel
             </button>
-            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">
+            <button type="submit" className="button button--primary">
               {batchToEdit ? 'Update' : 'Create'}
             </button>
           </div>

@@ -2,19 +2,25 @@
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(320px, 1.05fr) minmax(420px, .95fr);
-  background: #eef5f0;
+  background: transparent;
 }
 
 .authStory {
   position: relative;
   overflow: hidden;
   min-height: 100vh;
+  margin: 18px;
+  border-radius: 28px;
   padding: clamp(40px, 7vw, 96px);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   color: white;
-  background: linear-gradient(150deg, rgba(16,45,34,.93), rgba(24,77,57,.82)), url('/login/testx.jpg') center/cover;
+  background: linear-gradient(150deg, rgba(16,45,34,.86), rgba(24,77,57,.66)), url('/login/testx.jpg') center/cover;
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: 0 30px 70px rgba(16,45,34,.3);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 
 .authStory::after {
@@ -35,19 +41,28 @@
 .storyFoot { position: relative; z-index: 1; color: #adc4b7; font-size: .78rem; }
 
 .authPanel { min-height: 100vh; display: grid; place-items: center; padding: 40px; }
-.authCard { width: min(100%, 470px); }
+.authCard {
+  width: min(100%, 470px);
+  padding: clamp(28px, 4vw, 44px);
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,.6);
+  background: rgba(255,255,255,.42);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.5) inset, 0 30px 70px rgba(16,45,34,.18);
+}
 .authEyebrow { margin: 0 0 10px; color: #227052; font-size: .73rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
 .authCard h2 { margin: 0; color: #102d22; font-family: "Arial Narrow", ui-sans-serif, system-ui, sans-serif; font-size: 2.45rem; letter-spacing: -.055em; }
-.authIntro { margin: 10px 0 30px; color: #5b6a61; line-height: 1.6; }
+.authIntro { margin: 10px 0 30px; color: #43564b; line-height: 1.6; }
 .authForm { display: grid; gap: 18px; }
 .authField { display: grid; gap: 8px; color: #17211b; font-size: .84rem; font-weight: 750; }
 .authInputWrap { position: relative; }
-.authField input { width: 100%; padding: 14px 15px; border: 1px solid #cbd8d0; border-radius: 12px; background: white; outline: none; }
-.authField input:focus { border-color: #227052; box-shadow: 0 0 0 4px rgba(34,112,82,.1); }
+.authField input { width: 100%; padding: 14px 15px; border: 1px solid rgba(255,255,255,.6); border-radius: 12px; background: rgba(255,255,255,.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); outline: none; transition: border-color .2s, box-shadow .2s, background .2s; }
+.authField input:focus { border-color: #227052; background: rgba(255,255,255,.75); box-shadow: 0 0 0 4px rgba(34,112,82,.16); }
 .passwordToggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 0; border-radius: 9px; padding: 8px; background: transparent; color: #5b6a61; cursor: pointer; }
-.submitButton { width: 100%; min-height: 48px; border: 0; border-radius: 12px; color: white; background: #184d39; font-weight: 800; cursor: pointer; box-shadow: 0 12px 26px rgba(24,77,57,.18); }
-.submitButton:hover { background: #102d22; }
-.authError { margin: 0; padding: 12px 14px; border: 1px solid #f0c2b7; border-radius: 11px; color: #8a3424; background: #fff0ec; font-size: .87rem; }
+.submitButton { width: 100%; min-height: 48px; border: 0; border-radius: 12px; color: white; background: linear-gradient(135deg, #227052, #184d39); font-weight: 800; cursor: pointer; box-shadow: 0 12px 26px rgba(24,77,57,.3), 0 1px 0 rgba(255,255,255,.25) inset; transition: transform .18s ease, box-shadow .2s ease; }
+.submitButton:hover { transform: translateY(-2px); box-shadow: 0 16px 32px rgba(24,77,57,.4), 0 1px 0 rgba(255,255,255,.3) inset; }
+.authError { margin: 0; padding: 12px 14px; border: 1px solid rgba(240,194,183,.8); border-radius: 11px; color: #8a3424; background: rgba(255,240,236,.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-size: .87rem; }
 .authLinks { margin-top: 24px; display: flex; justify-content: space-between; gap: 18px; color: #5b6a61; font-size: .85rem; }
 .authLinks a { color: #184d39; font-weight: 750; text-decoration: none; }
 .authLinks a:hover { text-decoration: underline; }

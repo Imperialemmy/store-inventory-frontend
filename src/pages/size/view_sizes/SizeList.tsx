@@ -120,7 +120,8 @@ const SizeList = () => {
                 setModalOpen(false);
                 navigate(`/wares/${ware.id}`);
               }}
-              className="block w-full text-left px-4 py-2 bg-blue-100 hover:bg-blue-200 rounded"
+              className="button button--ghost"
+              style={{ display: 'block', width: '100%', textAlign: 'left' }}
             >
               {ware.name}
             </button>

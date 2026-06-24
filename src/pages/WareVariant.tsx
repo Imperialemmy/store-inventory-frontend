@@ -98,23 +98,21 @@ const WareVariantForm = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded shadow mt-6">
-      <h2 className="text-xl font-semibold mb-4">
+    <div className="page-container page-container--narrow">
+      <div className="surface form-card">
+      <h2 className="text-xl font-semibold mb-4" style={{ color: "var(--leaf-950)" }}>
         {variantId ? "Edit Variant" : "Add New Variant"}
       </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="size" className="block mb-1 font-medium">
-            Size
-          </label>
+      <form onSubmit={handleSubmit} className="form-grid">
+        <label className="field" htmlFor="size">
+          <span>Size</span>
           <select
             id="size"
             name="size"
             value={formData.size}
             onChange={handleChange}
             required
-            className="w-full border p-2 rounded"
           >
             <option value="">Select Size</option>
             {sizes.map((size) => (
@@ -123,12 +121,10 @@ const WareVariantForm = () => {
               </option>
             ))}
           </select>
-        </div>
+        </label>
 
-        <div>
-          <label htmlFor="sku" className="block mb-1 font-medium">
-            SKU
-          </label>
+        <label className="field" htmlFor="sku">
+          <span>SKU</span>
           <input
             type="text"
             id="sku"
@@ -136,14 +132,11 @@ const WareVariantForm = () => {
             value={formData.sku}
             onChange={handleChange}
             placeholder="SKU (optional)"
-            className="w-full border p-2 rounded"
           />
-        </div>
+        </label>
 
-        <div>
-          <label htmlFor="stock" className="block mb-1 font-medium">
-            Stock
-          </label>
+        <label className="field" htmlFor="stock">
+          <span>Stock</span>
           <input
             type="number"
             id="stock"
@@ -152,14 +145,11 @@ const WareVariantForm = () => {
             onChange={handleChange}
             required
             min={0}
-            className="w-full border p-2 rounded"
           />
-        </div>
+        </label>
 
-        <div>
-          <label htmlFor="price" className="block mb-1 font-medium">
-            Price
-          </label>
+        <label className="field" htmlFor="price">
+          <span>Price</span>
           <input
             type="number"
             id="price"
@@ -169,14 +159,11 @@ const WareVariantForm = () => {
             required
             min={0}
             step="0.01"
-            className="w-full border p-2 rounded"
           />
-        </div>
+        </label>
 
-        <div>
-          <label htmlFor="reorder_point" className="block mb-1 font-medium">
-            Reorder point
-          </label>
+        <label className="field" htmlFor="reorder_point">
+          <span>Reorder point</span>
           <input
             type="number"
             id="reorder_point"
@@ -185,18 +172,16 @@ const WareVariantForm = () => {
             onChange={handleChange}
             min={0}
             placeholder="Alert when stock falls to this level"
-            className="w-full border p-2 rounded"
           />
-        </div>
+        </label>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          {loading ? "Saving..." : variantId ? "Update Variant" : "Create Variant"}
-        </button>
+        <div className="form-actions">
+          <button type="submit" disabled={loading} className="button button--primary">
+            {loading ? "Saving..." : variantId ? "Update Variant" : "Create Variant"}
+          </button>
+        </div>
       </form>
+      </div>
     </div>
   );
 };

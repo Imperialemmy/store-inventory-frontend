@@ -18,30 +18,25 @@ const BulkSelectToolbar: React.FC<BulkSelectToolbarProps> = ({
   const allSelected = selectedIds.length === items.length;
 
   return (
-    <div className="flex justify-between items-center mb-4 p-2 bg-gray-100 rounded">
-      <div>
+    <div className="search-box" style={{ gridTemplateColumns: '1fr auto' }}>
+      <label className="inventory-list__name" style={{ gap: '10px', cursor: 'pointer' }}>
         <input
           type="checkbox"
           checked={allSelected}
           onChange={onToggleAll}
+          style={{ width: '18px', height: '18px' }}
         />
-        <span className="ml-2">
+        <span style={{ fontWeight: 700 }}>
           {allSelected ? "All selected" : `${selectedIds.length} selected`}
         </span>
-      </div>
+      </label>
 
       {selectedIds.length > 0 && (
-        <div className="space-x-2">
-          <button
-            className="bg-red-500 text-white px-3 py-1 rounded"
-            onClick={onDeleteSelected}
-          >
+        <div className="flex" style={{ gap: '8px' }}>
+          <button className="button button--danger button--small" onClick={onDeleteSelected}>
             Delete
           </button>
-          <button
-            className="bg-gray-300 px-3 py-1 rounded"
-            onClick={onClearSelection}
-          >
+          <button className="button button--ghost button--small" onClick={onClearSelection}>
             Clear
           </button>
         </div>

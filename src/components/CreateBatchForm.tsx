@@ -85,19 +85,16 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({ wareId, onSuccess }) 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="form-grid">
       {/* Variant */}
-      <div>
-        <label htmlFor="variant" className="block mb-1 font-medium text-gray-700">
-          Variant
-        </label>
+      <label className="field" htmlFor="variant">
+        <span>Variant</span>
         <select
           id="variant"
           name="variant"
           value={formData.variant}
           onChange={handleChange}
           required
-          className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Select variant</option>
           {variants.map((v) => (
@@ -107,13 +104,11 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({ wareId, onSuccess }) 
             </option>
           ))}
         </select>
-      </div>
+      </label>
 
       {/* Lot Number */}
-      <div>
-        <label htmlFor="lot_number" className="block mb-1 font-medium text-gray-700">
-          Lot Number
-        </label>
+      <label className="field" htmlFor="lot_number">
+        <span>Lot Number</span>
         <input
           type="text"
           id="lot_number"
@@ -121,15 +116,12 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({ wareId, onSuccess }) 
           value={formData.lot_number}
           onChange={handleChange}
           required
-          className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-      </div>
+      </label>
 
       {/* Stock */}
-      <div>
-        <label htmlFor="quantity" className="block mb-1 font-medium text-gray-700">
-          Quantity
-        </label>
+      <label className="field" htmlFor="quantity">
+        <span>Quantity</span>
         <input
           type="number"
           id="quantity"
@@ -138,15 +130,12 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({ wareId, onSuccess }) 
           onChange={handleChange}
           required
           min={0}
-          className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-      </div>
+      </label>
 
       {/* Manufacture Date */}
-      <div>
-        <label htmlFor="manufacturing_date" className="block mb-1 font-medium text-gray-700">
-          Manufacturing Date
-        </label>
+      <label className="field" htmlFor="manufacturing_date">
+        <span>Manufacturing Date</span>
         <input
           type="date"
           id="manufacturing_date"
@@ -154,15 +143,12 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({ wareId, onSuccess }) 
           value={formData.manufacturing_date}
           onChange={handleChange}
           required
-          className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-      </div>
+      </label>
 
       {/* Expiry Date */}
-      <div>
-        <label htmlFor="expiry_date" className="block mb-1 font-medium text-gray-700">
-          Expiry Date
-        </label>
+      <label className="field" htmlFor="expiry_date">
+        <span>Expiry Date</span>
         <input
           type="date"
           id="expiry_date"
@@ -170,38 +156,29 @@ const CreateBatchForm: React.FC<CreateBatchFormProps> = ({ wareId, onSuccess }) 
           value={formData.expiry_date}
           onChange={handleChange}
           required
-          className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-      </div>
+      </label>
 
       {/* Is Expired */}
-      <div className="flex items-center space-x-2">
+      <label className="field" htmlFor="is_expired" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
         <input
           type="checkbox"
           id="is_expired"
           name="is_expired"
           checked={formData.is_expired}
           onChange={handleChange}
-          className="h-5 w-5"
+          style={{ width: '18px', height: '18px' }}
         />
-        <label htmlFor="is_expired" className="font-medium text-gray-700">
-          Mark as Expired
-        </label>
-      </div>
+        <span>Mark as Expired</span>
+      </label>
 
       {/* Submit */}
-      <button
-        type="submit"
-        disabled={loading}
-        className={`w-full py-2 rounded text-white font-semibold ${
-          loading ? 'bg-blue-300' : 'bg-blue-600 hover:bg-blue-700'
-        } transition duration-200`}
-      >
+      <button type="submit" disabled={loading} className="button button--primary w-full">
         {loading ? 'Creating...' : 'Create Batch'}
       </button>
 
-      {successMessage && <p className="text-green-600 text-center">{successMessage}</p>}
-      {error && <p className="text-red-600 text-center">{error}</p>}
+      {successMessage && <p className="notice notice--success" role="status">{successMessage}</p>}
+      {error && <p className="notice notice--error" role="alert">{error}</p>}
     </form>
   );
 };

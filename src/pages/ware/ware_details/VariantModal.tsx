@@ -88,23 +88,18 @@ const VariantModal: React.FC<Props> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">
+    <div className="modal-overlay fixed inset-0 flex items-center justify-center z-50">
+      <div className="glass-panel p-6 w-full max-w-md">
+        <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--leaf-950)' }}>
           {variantToEdit ? 'Edit Product Type' : 'Add Product Type'}
         </h2>
 
-        {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
+        {error && <p className="notice notice--error" role="alert">{error}</p>}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium">Size</label>
-            <select
-              name="size"
-              value={formData.size}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-            >
+        <form onSubmit={handleSubmit} className="form-grid">
+          <label className="field">
+            <span>Size</span>
+            <select name="size" value={formData.size} onChange={handleChange}>
               <option value="">Select size</option>
               {filteredSizes.map((size) => (
                 <option key={size.id} value={size.id}>
@@ -112,35 +107,34 @@ const VariantModal: React.FC<Props> = ({
                 </option>
               ))}
             </select>
-          </div>
+          </label>
 
-          <div>
-            <label className="block text-sm font-medium">Price</label>
+          <label className="field">
+            <span>Price</span>
             <input
               type="number"
               name="price"
               value={formData.price}
               onChange={handleChange}
-              className="w-full p-2 border rounded"
             />
-          </div>
+          </label>
 
-          <div className="flex items-center">
+          <label className="field" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
             <input
               type="checkbox"
               name="is_available"
               checked={formData.is_available}
               onChange={handleChange}
-              className="mr-2"
+              style={{ width: '18px', height: '18px' }}
             />
-            <label>Available</label>
-          </div>
+            <span>Available</span>
+          </label>
 
-          <div className="flex justify-end gap-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">
+          <div className="form-actions">
+            <button type="button" onClick={onClose} className="button button--ghost">
               Cancel
             </button>
-            <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded">
+            <button type="submit" className="button button--primary">
               {variantToEdit ? 'Update' : 'Add'}
             </button>
           </div>
