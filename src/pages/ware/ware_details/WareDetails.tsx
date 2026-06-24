@@ -61,14 +61,16 @@ useEffect(() => {
     }
   };
 
-  if (loading) return <p className="text-center text-gray-500">Loading...</p>;
-  if (!ware) return <p className="text-center text-red-600">Ware not found.</p>;
+  if (loading) return <div className="page-container"><p className="text-center" style={{ color: 'var(--ink-600)' }}>Loading...</p></div>;
+  if (!ware) return <div className="page-container"><div className="surface empty-state"><strong>Ware not found.</strong></div></div>;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h2 className="text-3xl font-semibold text-gray-800 mb-6">{ware.name}</h2>
+    <div className="page-container">
+      <h2 className="page-header" style={{ marginBottom: '20px' }}>
+        <span style={{ color: 'var(--leaf-950)', fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800, letterSpacing: '-.04em' }}>{ware.name}</span>
+      </h2>
 
-      <div className="bg-white border border-gray-300 rounded-lg p-6 shadow-sm">
+      <div className="surface form-card">
         {/* Ware Info */}
         <p><strong>Brand:</strong> {ware.brand_detail.name}</p>
         <p><strong>Category:</strong> {ware.category_detail.name}</p>
@@ -78,15 +80,12 @@ useEffect(() => {
           <strong>Sizes:</strong>{' '}
           {ware.size_detail.length > 0 ? (
             ware.size_detail.map((s, index) => (
-              <span
-                key={index}
-                className="inline-block mr-2 mb-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
-              >
+              <span key={index} className="role-badge" style={{ marginRight: '8px', marginBottom: '4px' }}>
                 {s.size}{s.size_unit}
               </span>
             ))
           ) : (
-            <span className="text-sm italic text-gray-500">Not updated yet.</span>
+            <span className="text-sm italic" style={{ color: 'var(--ink-600)' }}>Not updated yet.</span>
           )}
         </p>
 
@@ -98,7 +97,7 @@ useEffect(() => {
               setVariantToEdit(null);
               setShowVariantModal(true);
             }}
-            className="px-5 py-2 rounded text-white font-semibold bg-blue-500 hover:bg-blue-600 transition"
+            className="button button--primary"
           >
             Add Product Type
           </button>
@@ -107,18 +106,19 @@ useEffect(() => {
 
         {/* Variants */}
         <div>
-          <h3 className="text-xl font-semibold mb-4 text-gray-800">Product types</h3>
+          <h3 className="text-xl font-semibold mb-4" style={{ color: 'var(--leaf-950)' }}>Product types</h3>
 
           {ware.variants.length === 0 ? (
-            <p className="text-gray-500 italic">Not updated yet.</p>
+            <p className="italic" style={{ color: 'var(--ink-600)' }}>Not updated yet.</p>
           ) : (
             ware.variants.map((variant) => (
               <div
                 key={variant.id}
-                className="border rounded p-4 mb-4 bg-gray-50"
+                className="glass-panel p-4 mb-4"
+                style={{ borderRadius: '16px' }}
               >
                 {/* Flex container for variant info and buttons */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4" style={{ flexWrap: 'wrap', gap: '12px' }}>
                   {/* Left side: variant details */}
                   <div className="space-x-6 whitespace-nowrap">
                     <span><strong>Size:</strong> {variant.size_detail.size}{variant.size_detail.size_unit}</span>
@@ -127,29 +127,29 @@ useEffect(() => {
                   </div>
 
                   {/* Right side: buttons */}
-                  <div className="flex gap-3 flex-shrink-0">
+                  <div className="flex gap-3 flex-shrink-0" style={{ flexWrap: 'wrap' }}>
                     {userRole.role === 'admin' && (
                     <button
                       onClick={() => {
                         setVariantToEdit(variant);
                         setShowVariantModal(true);
                       }}
-                      className="px-3 py-1 text-sm rounded bg-blue-500 text-white hover:bg-blue-600"
+                      className="button button--primary button--small"
                     >
                       Edit
                     </button>
                     )}
-                    
+
                     {userRole.role === 'admin' && (
                     <button
                       onClick={() => handleDeleteVariant(variant.id)}
-                      className="px-3 py-1 text-sm rounded bg-red-500 text-white hover:bg-red-600"
+                      className="button button--danger button--small"
                     >
                       Delete
                     </button>
-                      
+
                     )}
-                    
+
                       {userRole.role === 'admin' && (
                     <button
                       onClick={() => {
@@ -157,7 +157,7 @@ useEffect(() => {
                         setBatchToEdit(null);
                         setShowBatchModal(true);
                       }}
-                      className="px-3 py-1 text-sm rounded bg-blue-500 text-white hover:bg-blue-600"
+                      className="button button--accent button--small"
                     >
                       Add Stock
                     </button>
@@ -167,9 +167,9 @@ useEffect(() => {
 
                 {/* Batches */}
                 <div className="ml-4">
-                  <h4 className="text-md font-semibold text-gray-700 mb-2">Batches:</h4>
+                  <h4 className="text-md font-semibold mb-2" style={{ color: 'var(--leaf-800)' }}>Batches:</h4>
                   {variant.batches && variant.batches.length > 0 ? (
-                    <ul className="list-disc ml-5 space-y-2 text-gray-700">
+                    <ul className="list-disc ml-5 space-y-2" style={{ color: 'var(--ink-900)' }}>
                       {variant.batches.map((batch) => (
                         <li key={batch.id}>
                           <p><strong>Batch Number:</strong> {batch.lot_number}</p>
@@ -187,7 +187,7 @@ useEffect(() => {
                                 setSelectedVariantId(variant.id);
                                 setShowBatchModal(true);
                               }}
-                              className="px-3 py-1 text-sm rounded bg-blue-500 text-white hover:bg-blue-600"
+                              className="button button--primary button--small"
                             >
                               Edit Batch
                             </button>
@@ -196,7 +196,7 @@ useEffect(() => {
                           {userRole.role === 'admin' && (
                             <button
                               onClick={() => handleDeleteBatch(batch.id)}
-                              className="px-3 py-1 text-sm rounded bg-red-500 text-white hover:bg-red-600"
+                              className="button button--danger button--small"
                             >
                               Delete Batch
                             </button>
@@ -206,7 +206,7 @@ useEffect(() => {
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-sm italic text-gray-500">No batches added yet.</p>
+                    <p className="text-sm italic" style={{ color: 'var(--ink-600)' }}>No batches added yet.</p>
                   )}
                 </div>
               </div>

@@ -75,19 +75,16 @@ const CreateVariantForm: React.FC<CreateVariantFormProps> = ({ wareId }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="form-grid">
       {/* Size Selector */}
-      <div>
-        <label htmlFor="size" className="block mb-1 font-medium text-gray-700">
-          Size
-        </label>
+      <label className="field" htmlFor="size">
+        <span>Size</span>
         <select
           id="size"
           name="size"
           value={formData.size}
           onChange={handleChange}
           required
-          className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="" disabled>
             Select size
@@ -99,13 +96,11 @@ const CreateVariantForm: React.FC<CreateVariantFormProps> = ({ wareId }) => {
             </option>
           ))}
         </select>
-      </div>
+      </label>
 
       {/* Price */}
-      <div>
-        <label htmlFor="price" className="block mb-1 font-medium text-gray-700">
-          Price
-        </label>
+      <label className="field" htmlFor="price">
+        <span>Price</span>
         <input
           type="number"
           id="price"
@@ -116,41 +111,30 @@ const CreateVariantForm: React.FC<CreateVariantFormProps> = ({ wareId }) => {
           required
           min="0"
           step="0.01"
-          className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-      </div>
+      </label>
 
       {/* Availability */}
-      <div className="flex items-center space-x-2">
+      <label className="field" htmlFor="is_available" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
         <input
           type="checkbox"
           id="is_available"
           name="is_available"
           checked={formData.is_available}
           onChange={handleChange}
-          className="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+          style={{ width: '18px', height: '18px' }}
         />
-        <label htmlFor="is_available" className="font-medium text-gray-700">
-          Available
-        </label>
-      </div>
+        <span>Available</span>
+      </label>
 
       {/* Submit Button */}
-      <button
-        type="submit"
-        disabled={loading}
-        className={`w-full py-2 rounded text-white font-semibold ${
-          loading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
-        } transition-colors duration-300`}
-      >
+      <button type="submit" disabled={loading} className="button button--primary w-full">
         {loading ? 'Creating...' : 'Create Variant'}
       </button>
 
       {/* Success & Error Messages */}
-      {successMessage && (
-        <p className="text-green-600 font-medium text-center">{successMessage}</p>
-      )}
-      {error && <p className="text-red-600 font-medium text-center">{error}</p>}
+      {successMessage && <p className="notice notice--success" role="status">{successMessage}</p>}
+      {error && <p className="notice notice--error" role="alert">{error}</p>}
     </form>
   );
 };

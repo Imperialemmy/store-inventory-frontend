@@ -43,47 +43,54 @@ const filtered = (Array.isArray(wares) ? wares : []).filter((w) =>
   const paginated = filtered.slice(startIndex, startIndex + itemsPerPage);
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">{title}</h2>
+    <div className="page-container">
+      <h2 className="page-header" style={{ marginBottom: 0 }}>
+        <span className="eyebrow" style={{ display: 'block' }}>{title}</span>
+      </h2>
 
-      <input
-        type="text"
-        placeholder="Search wares..."
-        value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-          setCurrentPage(1);
-        }}
-        className="w-full p-2 border rounded-md mb-4"
-      />
+      <div className="surface form-card" style={{ marginBottom: '18px' }}>
+        <label className="field">
+          <span className="sr-only">Search wares</span>
+          <input
+            type="text"
+            placeholder="Search wares..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+        </label>
+      </div>
 
-      <ul className="space-y-2">
-        {paginated.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No wares found.</p>
-        ) : (
-          paginated.map((ware) => (
+      {paginated.length === 0 ? (
+        <div className="surface empty-state">
+          <strong>No wares found.</strong>
+        </div>
+      ) : (
+        <ul className="surface list-surface inventory-list">
+          {paginated.map((ware) => (
             <li
               key={ware.id}
               onClick={() => navigate(`/wares/${ware.id}`)}
-              className="p-4 border rounded-md shadow-sm bg-white hover:bg-gray-100 cursor-pointer transition"
+              className="inventory-list__row"
             >
-              {ware.name}
+              <div className="inventory-list__content">
+                <span className="inventory-list__name"><span>{ware.name}</span></span>
+                <span className="inventory-list__open">Open record →</span>
+              </div>
             </li>
-          ))
-        )}
-      </ul>
+          ))}
+        </ul>
+      )}
 
       {totalPages > 1 && (
-        <div className="flex justify-center mt-4 space-x-2">
+        <div className="pagination" style={{ border: 0, marginTop: '12px' }}>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
               onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded ${
-                page === currentPage
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 hover:bg-gray-300"
-              }`}
+              aria-current={page === currentPage ? "page" : undefined}
             >
               {page}
             </button>
