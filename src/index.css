@@ -132,7 +132,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .logout-button { justify-self: end; display: inline-flex; align-items: center; gap: 8px; border: 1px solid transparent; background: transparent; color: #a8412b; font-weight: 700; cursor: pointer; padding: 10px; border-radius: 12px; transition: background .2s, border-color .2s; }
 .logout-button:hover { background: rgba(255,255,255,.45); border-color: rgba(216,102,69,.3); }
 
-.app-shell__main { flex: 1; width: 100%; }
+.app-shell__main { flex: 1; width: 100%; overflow-x: clip; }
+
+/* Real-time sliding transition when moving between tabs/routes */
+.page-transition { animation: page-shift-in .44s cubic-bezier(.22,.61,.36,1) both; will-change: transform, opacity, filter; }
+@keyframes page-shift-in {
+  from { opacity: 0; transform: translateX(40px) scale(.985); filter: blur(8px); }
+  60%  { filter: blur(0); }
+  to   { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+}
 .page-container { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 58px 0 72px; }
 .page-container--narrow { width: min(760px, calc(100% - 40px)); }
 
@@ -181,12 +189,27 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .dashboard-card--4 .card-link { color: white; border-color: rgba(255,255,255,.2); background: rgba(255,255,255,.08); }
 .dashboard-card--4 .card-link--primary { background: linear-gradient(135deg, var(--mango-500), #e0a23a); border-color: transparent; color: var(--leaf-950); }
 
-.logo-stack { height: 130px; margin: 10px -5px 8px; position: relative; }
-.logo-stack__image { position: absolute; width: 104px; height: 104px; object-fit: cover; border: 6px solid rgba(255,255,255,.85); border-radius: 50%; box-shadow: 0 14px 34px rgba(16,45,34,.2); }
-.logo-stack__image--1 { left: 6%; top: 18px; transform: rotate(-8deg); }
-.logo-stack__image--2 { left: 34%; top: 2px; z-index: 2; }
-.logo-stack__image--3 { left: 62%; top: 24px; transform: rotate(8deg); }
-.logo-stack__placeholder { position: absolute; inset: 20px 0 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; border: 1px dashed rgba(242,184,75,.5); border-radius: 16px; color: var(--mango-500); }
+.logo-stack {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 10px;
+  height: 124px;
+  margin: 14px 0 10px;
+}
+.logo-stack__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: var(--glass-shadow);
+  transition: transform .3s cubic-bezier(.2,.7,.2,1), box-shadow .3s ease;
+}
+.logo-stack__image:hover { transform: translateY(-5px) scale(1.03); box-shadow: var(--glass-shadow-lg); }
+.dashboard-card--4 .logo-stack__image { border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.08); }
+.logo-stack__placeholder { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; border: 1px dashed rgba(242,184,75,.5); border-radius: 16px; color: var(--mango-500); }
 .logo-stack__placeholder small { color: #9fb3a8; font-size: .73rem; letter-spacing: .12em; text-transform: uppercase; }
 .dashboard-note { margin-top: 18px; padding: 19px 22px; display: flex; gap: 15px; align-items: center; border: 1px solid var(--glass-border); border-radius: 18px; background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: var(--glass-shadow); }
 .dashboard-note__dot { width: 11px; height: 45px; border-radius: 999px; background: linear-gradient(var(--mango-500) 0 45%, var(--tomato-500) 45% 70%, var(--leaf-650) 70%); }
@@ -298,7 +321,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .dashboard-card { min-height: 355px; padding: 20px; }
   .dashboard-card__actions { flex-direction: column; }
   .card-link { width: 100%; }
-  .logo-stack__image { width: 88px; height: 88px; }
+  .logo-stack { height: 104px; gap: 8px; }
   .app-footer { flex-direction: column; padding-left: 28px; }
   .form-actions { flex-direction: column-reverse; }
   .button { width: 100%; }
