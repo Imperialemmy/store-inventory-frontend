@@ -1,11 +1,48 @@
 import { LogOut, PackageOpen } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { primaryNavigation } from "../../config/navigation";
-import NavLinkItem from "./NavLinkItem";
 import { clearSession } from "../../utils/auth";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const navRef = useRef<HTMLElement>(null);
+  const linkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
+  const [pill, setPill] = useState({ left: 0, width: 0, visible: false });
+  // Skip the transition on the very first measure so the pill doesn't
+  // slide in from the left edge on initial load.
+  const [ready, setReady] = useState(false);
+
+  const measurePill = useCallback(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const active = primaryNavigation.find(
+      (link) =>
+        location.pathname === link.to || location.pathname.startsWith(`${link.to}/`)
+    );
+    const el = active ? linkRefs.current[active.to] : null;
+    if (!el) {
+      setPill((prev) => ({ ...prev, visible: false }));
+      return;
+    }
+    const navBox = nav.getBoundingClientRect();
+    const box = el.getBoundingClientRect();
+    setPill({ left: box.left - navBox.left + nav.scrollLeft, width: box.width, visible: true });
+  }, [location.pathname]);
+
+  useLayoutEffect(() => {
+    measurePill();
+  }, [measurePill]);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setReady(true));
+    window.addEventListener("resize", measurePill);
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener("resize", measurePill);
+    };
+  }, [measurePill]);
 
   const handleLogout = () => {
     clearSession();
@@ -22,9 +59,32 @@ const Navbar = () => {
         </span>
       </a>
 
-      <nav className="primary-nav" aria-label="Main navigation">
+      <nav className="primary-nav" aria-label="Main navigation" ref={navRef}>
+        <span
+          className="primary-nav__pill"
+          aria-hidden="true"
+          style={{
+            transform: `translateX(${pill.left}px)`,
+            width: pill.width,
+            opacity: pill.visible ? 1 : 0,
+            transition: ready
+              ? "transform .45s cubic-bezier(.34,1.4,.5,1), width .45s cubic-bezier(.34,1.4,.5,1), opacity .25s ease"
+              : "none",
+          }}
+        />
         {primaryNavigation.map((link) => (
-          <NavLinkItem key={link.to} to={link.to}>{link.shortLabel}</NavLinkItem>
+          <NavLink
+            key={link.to}
+            to={link.to}
+            ref={(el) => {
+              linkRefs.current[link.to] = el;
+            }}
+            className={({ isActive }) =>
+              `primary-nav__link${isActive ? " primary-nav__link--active" : ""}`
+            }
+          >
+            {link.shortLabel}
+          </NavLink>
         ))}
       </nav>
 
