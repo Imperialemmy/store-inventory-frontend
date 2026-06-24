@@ -15,6 +15,11 @@ import CategoryWares from './pages/category/view_categories/CategoriesWithWare';
 import SizeList from './pages/size/view_sizes/SizeList';
 import Wares from './pages/ware/view_wares/Wares';
 import WareVariantForm from './pages/WareVariant';
+import SupplierList from './pages/supplier/view_suppliers/SupplierList';
+import AddSupplier from './pages/supplier/add_suppliers/AddSupplier';
+import WarehouseList from './pages/warehouse/view_warehouses/WarehouseList';
+import AddWarehouse from './pages/warehouse/add_warehouses/AddWarehouse';
+import LowStockPage from './pages/low_stock/LowStockPage';
 import ErrorBoundary from './pages/ErrorBoundary';
 import Login from './pages/login/login';
 import SignupPage from './pages/signup/SignupPage';
@@ -38,11 +43,16 @@ const App = () => {
             <Route path="/categories/:categoryId" element={<CategoryWares />} />
             <Route path="/sizes" element={<SizeList />} />
             <Route path="/wares" element={<Wares />} />
+            <Route path="/suppliers" element={<SupplierList />} />
+            <Route path="/warehouses" element={<WarehouseList />} />
+            <Route path="/low-stock" element={<LowStockPage />} />
             <Route element={<AdminRoute />}>
               <Route path="/add-ware" element={<ErrorBoundary><AddWare /></ErrorBoundary>} />
               <Route path="/brands/add" element={<AddBrand />} />
               <Route path="/categories/add" element={<AddCategory />} />
               <Route path="/sizes/add" element={<AddSize />} />
+              <Route path="/suppliers/add" element={<AddSupplier />} />
+              <Route path="/warehouses/add" element={<AddWarehouse />} />
               <Route path="/wares/:wareId/variants/new" element={<WareVariantForm />} />
               <Route path="/wares/:wareId/variants/:variantId/edit" element={<WareVariantForm />} />
             </Route>

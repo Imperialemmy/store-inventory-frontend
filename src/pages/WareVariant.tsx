@@ -13,6 +13,7 @@ interface WareVariantFormData {
   sku: string;
   stock: number | "";
   price: number | "";
+  reorder_point: number | "";
 }
 
 const WareVariantForm = () => {
@@ -25,6 +26,7 @@ const WareVariantForm = () => {
     sku: "",
     stock: "",
     price: "",
+    reorder_point: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -42,10 +44,11 @@ const WareVariantForm = () => {
         .then((res) => {
           const v = res.data;
           setFormData({
-            size: v.size.id,
+            size: v.size.id ?? v.size,
             sku: v.sku || "",
             stock: v.stock || "",
             price: v.price || "",
+            reorder_point: v.reorder_point ?? "",
           });
         })
         .finally(() => setLoading(false));
@@ -74,6 +77,7 @@ const WareVariantForm = () => {
       size: Number(formData.size),
       stock: Number(formData.stock),
       price: Number(formData.price),
+      reorder_point: Number(formData.reorder_point) || 0,
     };
 
     try {
@@ -165,6 +169,22 @@ const WareVariantForm = () => {
             required
             min={0}
             step="0.01"
+            className="w-full border p-2 rounded"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="reorder_point" className="block mb-1 font-medium">
+            Reorder point
+          </label>
+          <input
+            type="number"
+            id="reorder_point"
+            name="reorder_point"
+            value={formData.reorder_point}
+            onChange={handleChange}
+            min={0}
+            placeholder="Alert when stock falls to this level"
             className="w-full border p-2 rounded"
           />
         </div>

@@ -10,6 +10,7 @@ interface FieldConfig<T extends FormValues> {
   label: string;
   placeholder: string;
   type?: "text" | "number";
+  required?: boolean;
 }
 
 interface EntityCreatePageProps<T extends FormValues> {
@@ -72,7 +73,7 @@ function EntityCreatePage<T extends FormValues>({
                 value={values[field.name]}
                 placeholder={field.placeholder}
                 onChange={(event) => setValues({ ...values, [field.name]: event.target.value })}
-                required
+                required={field.required ?? true}
               />
             </label>
           ))}
