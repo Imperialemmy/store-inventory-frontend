@@ -35,45 +35,38 @@ const DataTable: React.FC<DataTableProps> = ({ data, fetchRelatedItems, onEdit, 
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">{title}</h1>
-      <table className="w-full border-collapse border border-gray-300">
+    <div className="surface" style={{ padding: "20px" }}>
+      <h1 className="text-xl font-bold mb-4" style={{ color: "var(--leaf-950)" }}>{title}</h1>
+      <table className="glass-table">
         <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">Name</th>
-            <th className="border p-2">Actions</th>
+          <tr>
+            <th>Name</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {data.map((item) => (
             <>
-              <tr key={item.id} className="border">
-                <td className="p-2">{item.name}</td>
-                <td className="p-2">
-                  <button
-                    className="bg-blue-500 text-white px-3 py-1 rounded mr-2"
-                    onClick={() => onEdit(item)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="bg-red-500 text-white px-3 py-1 rounded"
-                    onClick={() => onDelete(item.id)}
-                  >
-                    Delete
-                  </button>
-                  <button
-                    className="bg-green-500 text-white px-3 py-1 rounded ml-2"
-                    onClick={() => toggleExpand(item.id)}
-                  >
-                    {expandedRow === item.id ? "Hide Products" : "View Products"}
-                  </button>
+              <tr key={item.id}>
+                <td style={{ fontWeight: 650, color: "var(--ink-900)" }}>{item.name}</td>
+                <td>
+                  <div className="flex" style={{ gap: "8px", flexWrap: "wrap" }}>
+                    <button className="button button--primary button--small" onClick={() => onEdit(item)}>
+                      Edit
+                    </button>
+                    <button className="button button--danger button--small" onClick={() => onDelete(item.id)}>
+                      Delete
+                    </button>
+                    <button className="button button--accent button--small" onClick={() => toggleExpand(item.id)}>
+                      {expandedRow === item.id ? "Hide Products" : "View Products"}
+                    </button>
+                  </div>
                 </td>
               </tr>
               {expandedRow === item.id && relatedItems[item.id] && (
                 <tr>
-                  <td colSpan={2} className="p-2 bg-gray-100">
-                    <h2 className="text-md font-semibold">Products:</h2>
+                  <td colSpan={2} className="glass-subrow">
+                    <h2 className="text-md font-semibold" style={{ color: "var(--leaf-800)" }}>Products:</h2>
                     <ul>
                       {relatedItems[item.id].map((product) => (
                         <li key={product.id} className="ml-4 text-sm">{product.name}</li>
