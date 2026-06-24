@@ -17,11 +17,10 @@ export const dropdownData = [
   {
     name: 'brands',
     label: 'Brands',
-    logos: ['logos/brands/brand1.jpg',
-            'logos/brands/brand2.jpeg',
-            'logos/brands/brand3.png',
-            'logos/brands/brand4.jpg',
-            'logos/brands/brand5.png',
+    logos: ['/logos/brands/brand1.png',
+            '/logos/brands/brand2.png',
+            '/logos/brands/brand3.png',
+            '/logos/brands/brand5.png',
     ],
     description: 'Manage your product brands easily.',
     links: [
@@ -32,11 +31,9 @@ export const dropdownData = [
   {
     name: 'categories',
     label: 'Categories',
-    logos: ['/logos/categories/categories1.webp',
-            '/logos/categories/categories2.jpg',
-            '/logos/categories/categories3.jpg',
-            '/logos/categories/categories4.jpg',
-            '/logos/categories/categories5.jpg'
+    logos: ['/logos/categories/categories2.png',
+            '/logos/categories/categories4.png',
+            '/logos/categories/categories5.png'
     ],
     description: 'Find and organize products by categories.',
     links: [
