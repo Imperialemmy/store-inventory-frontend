@@ -20,6 +20,9 @@ import AddSupplier from './pages/supplier/add_suppliers/AddSupplier';
 import WarehouseList from './pages/warehouse/view_warehouses/WarehouseList';
 import AddWarehouse from './pages/warehouse/add_warehouses/AddWarehouse';
 import LowStockPage from './pages/low_stock/LowStockPage';
+import CustomerList from './pages/customer/view_customers/CustomerList';
+import CustomerForm from './pages/customer/CustomerForm';
+import CustomerDetail from './pages/customer/customer_details/CustomerDetail';
 import ErrorBoundary from './pages/ErrorBoundary';
 import Login from './pages/login/login';
 import SignupPage from './pages/signup/SignupPage';
@@ -46,6 +49,8 @@ const App = () => {
             <Route path="/suppliers" element={<SupplierList />} />
             <Route path="/warehouses" element={<WarehouseList />} />
             <Route path="/low-stock" element={<LowStockPage />} />
+            <Route path="/customers" element={<CustomerList />} />
+            <Route path="/customers/:customerId" element={<CustomerDetail />} />
             <Route element={<AdminRoute />}>
               <Route path="/add-ware" element={<ErrorBoundary><AddWare /></ErrorBoundary>} />
               <Route path="/brands/add" element={<AddBrand />} />
@@ -53,6 +58,8 @@ const App = () => {
               <Route path="/sizes/add" element={<AddSize />} />
               <Route path="/suppliers/add" element={<AddSupplier />} />
               <Route path="/warehouses/add" element={<AddWarehouse />} />
+              <Route path="/customers/add" element={<CustomerForm />} />
+              <Route path="/customers/:customerId/edit" element={<CustomerForm />} />
               <Route path="/wares/:wareId/variants/new" element={<WareVariantForm />} />
               <Route path="/wares/:wareId/variants/:variantId/edit" element={<WareVariantForm />} />
             </Route>
