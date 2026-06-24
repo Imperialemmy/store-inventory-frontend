@@ -10,6 +10,7 @@ export const primaryNavigation: NavigationItem[] = [
   { to: "/brands", label: "Brands", shortLabel: "Brands" },
   { to: "/categories", label: "Categories", shortLabel: "Categories" },
   { to: "/sizes", label: "Sizes", shortLabel: "Sizes" },
+  { to: "/customers", label: "Customers", shortLabel: "Customers" },
   { to: "/suppliers", label: "Suppliers", shortLabel: "Suppliers" },
   { to: "/warehouses", label: "Warehouses", shortLabel: "Stores" },
   { to: "/low-stock", label: "Low stock", shortLabel: "Low stock" },

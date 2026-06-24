@@ -5,6 +5,7 @@ import PageHeader from "../../components/ui/PageHeader";
 
 interface GenericListProps<T> {
   title: string;
+  eyebrow?: string;
   description?: string;
   createPath?: string;
   createLabel?: string;
@@ -19,6 +20,7 @@ interface GenericListProps<T> {
 
 function GenericList<T>({
   title,
+  eyebrow = "Inventory index",
   description = "Search, review, and open a record to see its inventory details.",
   createPath,
   createLabel = "Add new",
@@ -79,7 +81,7 @@ function GenericList<T>({
 
   return (
     <div className="page-container">
-      <PageHeader eyebrow="Inventory index" title={title} description={description} action={action} />
+      <PageHeader eyebrow={eyebrow} title={title} description={description} action={action} />
       <section className="surface list-surface">
         <label className="search-box">
           <Search size={19} aria-hidden="true" />
