@@ -155,7 +155,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 /* ---------- Page header ---------- */
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; margin-bottom: 32px; }
 .eyebrow { margin: 0 0 10px; color: var(--leaf-650); font-size: .74rem; line-height: 1; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
-.page-header h1 { max-width: 760px; margin: 0; color: var(--leaf-950); font-family: "Arial Narrow", "Roboto Condensed", ui-sans-serif, system-ui, sans-serif; font-size: clamp(2.25rem, 5.4vw, 5.1rem); font-weight: 800; letter-spacing: -.065em; line-height: .94; }
+.page-header h1 { max-width: none; margin: 0; color: var(--leaf-950); font-family: "Arial Narrow", "Roboto Condensed", ui-sans-serif, system-ui, sans-serif; font-size: clamp(1.6rem, 3.2vw, 2.7rem); font-weight: 800; letter-spacing: -.04em; line-height: 1.05; white-space: nowrap; }
 .page-header__description { max-width: 610px; margin: 18px 0 0; color: var(--ink-600); font-size: clamp(1rem, 1.6vw, 1.14rem); line-height: 1.65; }
 .page-header__action { flex: 0 0 auto; }
 .role-badge { display: inline-flex; align-items: center; gap: 8px; padding: 9px 13px; border: 1px solid var(--glass-border); border-radius: 999px; background: var(--glass-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: var(--leaf-800); font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; box-shadow: var(--glass-shadow); }
@@ -323,7 +323,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 600px) {
   .page-container, .page-container--narrow { width: min(100% - 28px, 1180px); padding: 36px 0 50px; }
   .page-header { align-items: flex-start; flex-direction: column; gap: 18px; margin-bottom: 24px; }
-  .page-header h1 { font-size: clamp(2.25rem, 14vw, 3.5rem); }
+  .page-header h1 { font-size: clamp(1.5rem, 6.5vw, 2.1rem); white-space: normal; }
   .brand-mark small, .logout-button span { display: none; }
   .logout-button { padding: 11px; border: 1px solid rgba(216,102,69,.3); }
   .dashboard-card { min-height: 400px; padding: 20px; }
