@@ -12,7 +12,8 @@ interface WareVariantFormData {
   size: number | "";
   sku: string;
   stock: number | "";
-  price: number | "";
+  retail_price: number | "";
+  wholesale_price: number | "";
   reorder_point: number | "";
 }
 
@@ -25,7 +26,8 @@ const WareVariantForm = () => {
     size: "",
     sku: "",
     stock: "",
-    price: "",
+    retail_price: "",
+    wholesale_price: "",
     reorder_point: "",
   });
   const [loading, setLoading] = useState(false);
@@ -47,7 +49,8 @@ const WareVariantForm = () => {
             size: v.size.id ?? v.size,
             sku: v.sku || "",
             stock: v.stock || "",
-            price: v.price || "",
+            retail_price: v.retail_price || "",
+            wholesale_price: v.wholesale_price || "",
             reorder_point: v.reorder_point ?? "",
           });
         })
@@ -76,7 +79,8 @@ const WareVariantForm = () => {
       ware: Number(wareId),
       size: Number(formData.size),
       stock: Number(formData.stock),
-      price: Number(formData.price),
+      retail_price: Number(formData.retail_price) || 0,
+      wholesale_price: Number(formData.wholesale_price) || 0,
       reorder_point: Number(formData.reorder_point) || 0,
     };
 
@@ -148,15 +152,28 @@ const WareVariantForm = () => {
           />
         </label>
 
-        <label className="field" htmlFor="price">
-          <span>Price</span>
+        <label className="field" htmlFor="retail_price">
+          <span>Retail price (₦)</span>
           <input
             type="number"
-            id="price"
-            name="price"
-            value={formData.price}
+            id="retail_price"
+            name="retail_price"
+            value={formData.retail_price}
             onChange={handleChange}
             required
+            min={0}
+            step="0.01"
+          />
+        </label>
+
+        <label className="field" htmlFor="wholesale_price">
+          <span>Wholesale price (₦)</span>
+          <input
+            type="number"
+            id="wholesale_price"
+            name="wholesale_price"
+            value={formData.wholesale_price}
+            onChange={handleChange}
             min={0}
             step="0.01"
           />
