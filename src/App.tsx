@@ -23,9 +23,11 @@ import LowStockPage from './pages/low_stock/LowStockPage';
 import CustomerList from './pages/customer/view_customers/CustomerList';
 import CustomerForm from './pages/customer/CustomerForm';
 import CustomerDetail from './pages/customer/customer_details/CustomerDetail';
+import CustomerStatement from './pages/customer/customer_details/CustomerStatement';
 import SalesList from './pages/sales/view_sales/SalesList';
 import CreateSale from './pages/sales/create_sale/CreateSale';
 import SaleDetail from './pages/sales/sale_details/SaleDetail';
+import SalesReport from './pages/sales/reports/SalesReport';
 import ErrorBoundary from './pages/ErrorBoundary';
 import Login from './pages/login/login';
 import SignupPage from './pages/signup/SignupPage';
@@ -54,8 +56,10 @@ const App = () => {
             <Route path="/low-stock" element={<LowStockPage />} />
             <Route path="/customers" element={<CustomerList />} />
             <Route path="/customers/:customerId" element={<CustomerDetail />} />
+            <Route path="/customers/:customerId/statement" element={<CustomerStatement />} />
             <Route path="/sales" element={<SalesList />} />
             <Route path="/sales/new" element={<CreateSale />} />
+            <Route path="/sales/reports" element={<SalesReport />} />
             <Route path="/sales/:saleId" element={<SaleDetail />} />
             <Route element={<AdminRoute />}>
               <Route path="/add-ware" element={<ErrorBoundary><AddWare /></ErrorBoundary>} />

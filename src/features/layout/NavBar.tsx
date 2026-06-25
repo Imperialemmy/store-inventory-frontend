@@ -14,14 +14,16 @@ const Navbar = () => {
   // slide in from the left edge on initial load.
   const [ready, setReady] = useState(false);
 
+  // The active tab is the navigation entry whose path is the longest prefix
+  // of the current location, so /sales/reports lights Reports (not Sales).
+  const activeTo = primaryNavigation
+    .filter((link) => location.pathname === link.to || location.pathname.startsWith(`${link.to}/`))
+    .sort((a, b) => b.to.length - a.to.length)[0]?.to;
+
   const measurePill = useCallback(() => {
     const nav = navRef.current;
     if (!nav) return;
-    const active = primaryNavigation.find(
-      (link) =>
-        location.pathname === link.to || location.pathname.startsWith(`${link.to}/`)
-    );
-    const el = active ? linkRefs.current[active.to] : null;
+    const el = activeTo ? linkRefs.current[activeTo] : null;
     if (!el) {
       setPill((prev) => ({ ...prev, visible: false }));
       return;
@@ -29,7 +31,7 @@ const Navbar = () => {
     const navBox = nav.getBoundingClientRect();
     const box = el.getBoundingClientRect();
     setPill({ left: box.left - navBox.left + nav.scrollLeft, width: box.width, visible: true });
-  }, [location.pathname]);
+  }, [activeTo]);
 
   useLayoutEffect(() => {
     measurePill();
@@ -79,9 +81,7 @@ const Navbar = () => {
             ref={(el) => {
               linkRefs.current[link.to] = el;
             }}
-            className={({ isActive }) =>
-              `primary-nav__link${isActive ? " primary-nav__link--active" : ""}`
-            }
+            className={`primary-nav__link${link.to === activeTo ? " primary-nav__link--active" : ""}`}
           >
             {link.shortLabel}
           </NavLink>
