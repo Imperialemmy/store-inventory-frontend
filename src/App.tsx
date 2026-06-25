@@ -28,6 +28,11 @@ import SalesList from './pages/sales/view_sales/SalesList';
 import CreateSale from './pages/sales/create_sale/CreateSale';
 import SaleDetail from './pages/sales/sale_details/SaleDetail';
 import SalesReport from './pages/sales/reports/SalesReport';
+import ExpenseList from './pages/expense/view_expenses/ExpenseList';
+import AddExpense from './pages/expense/add_expenses/AddExpense';
+import ExpenseCategoryList from './pages/expense/categories/ExpenseCategoryList';
+import AddExpenseCategory from './pages/expense/categories/AddExpenseCategory';
+import ExpenseReport from './pages/expense/reports/ExpenseReport';
 import ErrorBoundary from './pages/ErrorBoundary';
 import Login from './pages/login/login';
 import SignupPage from './pages/signup/SignupPage';
@@ -61,6 +66,9 @@ const App = () => {
             <Route path="/sales/new" element={<CreateSale />} />
             <Route path="/sales/reports" element={<SalesReport />} />
             <Route path="/sales/:saleId" element={<SaleDetail />} />
+            <Route path="/expenses" element={<ExpenseList />} />
+            <Route path="/expenses/report" element={<ExpenseReport />} />
+            <Route path="/expenses/categories" element={<ExpenseCategoryList />} />
             <Route element={<AdminRoute />}>
               <Route path="/add-ware" element={<ErrorBoundary><AddWare /></ErrorBoundary>} />
               <Route path="/brands/add" element={<AddBrand />} />
@@ -70,6 +78,8 @@ const App = () => {
               <Route path="/warehouses/add" element={<AddWarehouse />} />
               <Route path="/customers/add" element={<CustomerForm />} />
               <Route path="/customers/:customerId/edit" element={<CustomerForm />} />
+              <Route path="/expenses/add" element={<AddExpense />} />
+              <Route path="/expenses/categories/add" element={<AddExpenseCategory />} />
               <Route path="/wares/:wareId/variants/new" element={<WareVariantForm />} />
               <Route path="/wares/:wareId/variants/:variantId/edit" element={<WareVariantForm />} />
             </Route>
