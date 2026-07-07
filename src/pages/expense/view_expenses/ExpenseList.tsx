@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, PieChart, Tags } from "lucide-react";
+import { Plus } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import { useUserRole } from "../../../hooks/useUserRole";
@@ -29,8 +29,6 @@ const ExpenseList = () => {
         description="Every cost the business records, by category and payment method."
         action={
           <div className="page-actions">
-            <Link className="button button--ghost" to="/expenses/report"><PieChart size={16} /> P&amp;L report</Link>
-            <Link className="button button--ghost" to="/expenses/categories"><Tags size={16} /> Categories</Link>
             {userRole.isAdmin && <Link className="button button--primary" to="/expenses/add"><Plus size={16} /> Add expense</Link>}
           </div>
         }

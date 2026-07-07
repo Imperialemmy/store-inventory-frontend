@@ -46,27 +46,27 @@ export default function LowStockPage() {
       )}
 
       {variants.length > 0 && (
-        <div className="surface" style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="surface list-surface" style={{ overflowX: "auto" }}>
+          <table className="glass-table">
             <thead>
-              <tr style={{ textAlign: "left" }}>
-                <th style={{ padding: "0.5rem" }}>Product</th>
-                <th style={{ padding: "0.5rem" }}>Size</th>
-                <th style={{ padding: "0.5rem" }}>In stock</th>
-                <th style={{ padding: "0.5rem" }}>Reorder point</th>
-                <th style={{ padding: "0.5rem" }} />
+              <tr>
+                <th>Product</th>
+                <th>Size</th>
+                <th style={{ textAlign: "right" }}>In stock</th>
+                <th style={{ textAlign: "right" }}>Reorder point</th>
+                <th />
               </tr>
             </thead>
             <tbody>
               {variants.map((v) => (
-                <tr key={v.id} style={{ borderTop: "1px solid #eee" }}>
-                  <td style={{ padding: "0.5rem" }}>{v.ware_name}</td>
-                  <td style={{ padding: "0.5rem" }}>
+                <tr key={v.id}>
+                  <td style={{ fontWeight: 700, color: "var(--ink-900)" }}>{v.ware_name}</td>
+                  <td>
                     {v.size_detail?.size} {v.size_detail?.size_unit ?? ""}
                   </td>
-                  <td style={{ padding: "0.5rem", color: "#b91c1c", fontWeight: 600 }}>{v.stock}</td>
-                  <td style={{ padding: "0.5rem" }}>{v.reorder_point}</td>
-                  <td style={{ padding: "0.5rem" }}>
+                  <td style={{ textAlign: "right", color: "var(--danger)", fontWeight: 700 }}>{v.stock}</td>
+                  <td style={{ textAlign: "right" }}>{v.reorder_point}</td>
+                  <td style={{ textAlign: "right" }}>
                     <Link className="inventory-list__open" to={`/wares/${v.ware}`}>
                       View product →
                     </Link>
