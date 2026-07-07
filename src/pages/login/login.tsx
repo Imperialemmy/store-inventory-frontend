@@ -1,5 +1,6 @@
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
+import { Leaf } from "lucide-react";
 import styles from "./login.module.css";
 import useLogin from "./useLogin";
 
@@ -17,20 +18,23 @@ const Login = () => {
 
   return (
     <main className={styles.authPage}>
-      <section className={styles.authStory} aria-label="AkinFolu Foods">
-        <div className={styles.storyBrand}>AkinFolu Foods · Lagos</div>
-        <div className={styles.storyCopy}>
-          <h1>Know what is on every shelf.</h1>
-          <p>A calm, reliable control desk for products, pack sizes, stock batches, and the people keeping the store moving.</p>
+      <section className={styles.authHero} aria-label="AkinFolu Foods">
+        <div className={styles.heroBrand}>
+          <span className={styles.heroLogo}><Leaf size={22} /></span>
+          <span className={styles.heroName}>AkinFolu Foods</span>
         </div>
-        <div className={styles.storyFoot}>Food inventory, without the paper chase.</div>
+        <div className={styles.heroCopy}>
+          <h1>Fresh. Quality. Delivered.</h1>
+          <p>The control desk for your food wholesale business — stock, sales, customers and spend, all in one place.</p>
+        </div>
+        <div className={styles.heroFoot}>Food inventory, without the paper chase.</div>
       </section>
 
       <section className={styles.authPanel}>
         <div className={styles.authCard}>
           <p className={styles.authEyebrow}>Store access</p>
           <h2>Welcome back</h2>
-          <p className={styles.authIntro}>Sign in to open today’s inventory desk.</p>
+          <p className={styles.authIntro}>Sign in to open today’s desk.</p>
 
           <form className={styles.authForm} onSubmit={handleLogin}>
             {error && <p className={styles.authError} role="alert">{error}</p>}
@@ -65,11 +69,11 @@ const Login = () => {
               </div>
             </label>
 
-            <button type="submit" className={styles.submitButton}>Open inventory desk</button>
+            <button type="submit" className={styles.submitButton}>Login</button>
           </form>
 
           <div className={styles.authLinks}>
-            <span>New to the team? <Link to="/signup">Create an account</Link></span>
+            <span>New to the team? <Link to="/signup">Sign up</Link></span>
           </div>
         </div>
       </section>

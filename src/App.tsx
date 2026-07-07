@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ProtectedLayout from './components/ProtectedLayout';
 import AdminRoute from './components/AdminRoute';
 import AppShell from './features/layout/AppShell';
-import Dashboard from './pages/home/Home';
 import AddWare from './pages/ware/add_wares/AddWare';
 import AddBrand from './pages/brand/add_brands/AddBrand';
 import AddCategory from './pages/category/add_categories/AddCategory';
@@ -25,9 +24,10 @@ import CustomerForm from './pages/customer/CustomerForm';
 import CustomerDetail from './pages/customer/customer_details/CustomerDetail';
 import CustomerStatement from './pages/customer/customer_details/CustomerStatement';
 import SalesList from './pages/sales/view_sales/SalesList';
-import CreateSale from './pages/sales/create_sale/CreateSale';
+import PointOfSale from './pages/sales/pos/PointOfSale';
 import SaleDetail from './pages/sales/sale_details/SaleDetail';
 import SalesReport from './pages/sales/reports/SalesReport';
+import Settings from './pages/settings/Settings';
 import ExpenseList from './pages/expense/view_expenses/ExpenseList';
 import AddExpense from './pages/expense/add_expenses/AddExpense';
 import ExpenseCategoryList from './pages/expense/categories/ExpenseCategoryList';
@@ -48,7 +48,8 @@ const App = () => {
         {/* Protected Routes */}
         <Route element={<ProtectedLayout />}>
           <Route element={<AppShell />}>
-            <Route path="/home" element={<Dashboard />} />
+            <Route path="/home" element={<Navigate to="/sales" replace />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/brands" element={<BrandList />} />
             <Route path="/brands/:brandId" element={<BrandsWithWares />} />
             <Route path="/wares/:wareId" element={<WareDetail />} />
@@ -62,8 +63,8 @@ const App = () => {
             <Route path="/customers" element={<CustomerList />} />
             <Route path="/customers/:customerId" element={<CustomerDetail />} />
             <Route path="/customers/:customerId/statement" element={<CustomerStatement />} />
-            <Route path="/sales" element={<SalesList />} />
-            <Route path="/sales/new" element={<CreateSale />} />
+            <Route path="/sales" element={<PointOfSale />} />
+            <Route path="/sales/invoices" element={<SalesList />} />
             <Route path="/sales/reports" element={<SalesReport />} />
             <Route path="/sales/:saleId" element={<SaleDetail />} />
             <Route path="/expenses" element={<ExpenseList />} />

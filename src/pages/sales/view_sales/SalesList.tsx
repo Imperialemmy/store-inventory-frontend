@@ -26,7 +26,7 @@ const SalesList = () => {
       title="Sales"
       eyebrow="Invoices"
       description="Wholesale and retail sales, their totals and outstanding balances."
-      createPath="/sales/new"
+      createPath="/sales"
       createLabel="New sale"
       items={sales}
       itemKey={(item) => item.id}
