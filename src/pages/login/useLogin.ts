@@ -24,7 +24,7 @@ const useLogin = () => {
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
 
-      navigate("/home");
+      navigate("/sales");
     } catch (err) {
        console.error(err);
       setError("Login failed. Check your username and password.");
