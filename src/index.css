@@ -172,6 +172,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .inventory-list__name { display: flex; align-items: center; gap: 12px; color: var(--ink-900); font-weight: 700; }
 .inventory-list__name::before { content: ""; width: 8px; height: 8px; flex: 0 0 auto; border-radius: 3px; background: var(--brand-soft); box-shadow: inset 0 0 0 2px var(--brand); }
 .inventory-list__name:has(input)::before { display: none; }
+.inventory-list__name--plain::before { display: none; }
 .inventory-list__open { color: var(--brand); font-size: .78rem; font-weight: 750; }
 .empty-state { padding: 60px 24px; text-align: center; }
 .empty-state strong { color: var(--ink-900); font-size: 1.05rem; }
