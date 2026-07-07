@@ -1,7 +1,7 @@
 export interface SaleItem {
   id?: number;
-  variant: number;
-  variant_label?: string;
+  product: number;
+  product_name?: string;
   quantity: number;
   unit_price: string;
   line_total?: string;
@@ -14,7 +14,7 @@ export interface CreditNote {
   reason: string | null;
   amount: string;
   created_at: string;
-  items: { id: number; sale_item: number; variant_label: string; quantity: number; unit_price: string }[];
+  items: { id: number; sale_item: number; product_name: string; quantity: number; unit_price: string }[];
 }
 
 export interface Payment {

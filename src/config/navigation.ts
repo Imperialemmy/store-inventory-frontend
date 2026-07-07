@@ -7,7 +7,7 @@ export interface NavGroup {
   key: string;
   label: string;
   to: string;
-  icon: "sales" | "inventory" | "customers" | "staff" | "reports" | "settings";
+  icon: "sales" | "inventory" | "customers";
   /** Path prefixes that mark this group active (longest match wins). */
   match: string[];
   sub?: SubNavItem[];
@@ -28,18 +28,9 @@ export const sidebarNavigation: NavGroup[] = [
   {
     key: "inventory",
     label: "Inventory",
-    to: "/wares",
+    to: "/products",
     icon: "inventory",
-    match: ["/wares", "/add-ware", "/brands", "/categories", "/sizes", "/suppliers", "/warehouses", "/low-stock"],
-    sub: [
-      { to: "/wares", label: "Products" },
-      { to: "/brands", label: "Brands" },
-      { to: "/categories", label: "Categories" },
-      { to: "/sizes", label: "Sizes" },
-      { to: "/suppliers", label: "Suppliers" },
-      { to: "/warehouses", label: "Warehouses" },
-      { to: "/low-stock", label: "Low stock" },
-    ],
+    match: ["/products"],
   },
   {
     key: "customers",
@@ -48,42 +39,8 @@ export const sidebarNavigation: NavGroup[] = [
     icon: "customers",
     match: ["/customers"],
   },
-  {
-    key: "staff",
-    label: "Staff",
-    to: "/staff/employees",
-    icon: "staff",
-    match: ["/staff"],
-    sub: [
-      { to: "/staff/employees", label: "Employees" },
-      { to: "/staff/attendance", label: "Attendance" },
-      { to: "/staff/leave", label: "Leave" },
-      { to: "/staff/payroll", label: "Payroll" },
-    ],
-  },
-  {
-    key: "reports",
-    label: "Reports",
-    to: "/sales/reports",
-    icon: "reports",
-    match: ["/sales/reports", "/expenses", "/reports"],
-    sub: [
-      { to: "/sales/reports", label: "Sales" },
-      { to: "/expenses/report", label: "Profit & Loss" },
-      { to: "/expenses", label: "Expenses" },
-      { to: "/reports/debt-aging", label: "Debt aging" },
-    ],
-  },
-  {
-    key: "settings",
-    label: "Settings",
-    to: "/settings",
-    icon: "settings",
-    match: ["/settings"],
-  },
 ];
 
-/** All (group, prefix) pairs, so we can pick the most specific active group. */
 const allMatches = sidebarNavigation.flatMap((group) =>
   group.match.map((prefix) => ({ key: group.key, prefix }))
 );

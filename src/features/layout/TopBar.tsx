@@ -48,7 +48,7 @@ const TopBar = ({ onMenu }: TopBarProps) => {
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
     const q = query.trim();
-    if (q) navigate(`/wares?q=${encodeURIComponent(q)}`);
+    if (q) navigate(`/products?q=${encodeURIComponent(q)}`);
   };
 
   return (

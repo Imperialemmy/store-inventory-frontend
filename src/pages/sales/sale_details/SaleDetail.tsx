@@ -145,7 +145,7 @@ const SaleDetail = () => {
           <tbody>
             {sale.items.map((item) => (
               <tr key={item.id}>
-                <td>{item.variant_label}</td>
+                <td>{item.product_name}</td>
                 <td style={{ textAlign: "right" }}>{item.quantity}</td>
                 <td style={{ textAlign: "right" }}>{formatNaira(item.unit_price)}</td>
                 <td style={{ textAlign: "right" }}>{formatNaira(item.line_total ?? Number(item.unit_price) * item.quantity)}</td>
@@ -235,7 +235,7 @@ const SaleDetail = () => {
               {sale.credit_notes.map((note) => (
                 <tr key={note.id}>
                   <td>{note.created_at.slice(0, 10)}</td>
-                  <td>{note.items.map((i) => `${i.quantity} × ${i.variant_label}`).join(", ")}</td>
+                  <td>{note.items.map((i) => `${i.quantity} × ${i.product_name}`).join(", ")}</td>
                   <td>{note.reason || "—"}</td>
                   <td style={{ textAlign: "right" }}>{formatNaira(note.amount)}</td>
                 </tr>
@@ -256,7 +256,7 @@ const SaleDetail = () => {
                   const returnable = item.quantity - (item.returned_quantity ?? 0);
                   return (
                     <tr key={item.id}>
-                      <td>{item.variant_label}</td>
+                      <td>{item.product_name}</td>
                       <td style={{ textAlign: "right" }}>{item.quantity}</td>
                       <td style={{ textAlign: "right" }}>{item.returned_quantity ?? 0}</td>
                       <td>

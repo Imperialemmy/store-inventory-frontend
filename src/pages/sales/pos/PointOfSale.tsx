@@ -1,68 +1,56 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, ShoppingCart, Clock, BarChart3, Plus, Minus, UserPlus } from "lucide-react";
+import { Search, ShoppingCart, Plus, Minus, UserPlus, Package } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import { formatNaira } from "../salesTypes";
 
-interface CustomerOption { id: number; name: string; customer_type: "wholesale" | "retail"; }
-interface VariantOption {
-  id: number; ware_name: string; ware_image: string | null;
-  size_detail: { size: string; size_unit: string | null };
-  retail_price: string; wholesale_price: string; stock: number;
+interface CustomerOption { id: number; name: string; customer_type: string; }
+interface Product {
+  id: number;
+  name: string;
+  image: string | null;
+  price: string;
+  stock: number;
 }
-interface CartLine { variant: VariantOption; quantity: number; }
+interface CartLine { product: Product; quantity: number; }
 
 const VAT_RATE = 7.5;
 
 const PointOfSale = () => {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
-  const [variants, setVariants] = useState<VariantOption[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [customerId, setCustomerId] = useState<number | "">("");
   const [productQuery, setProductQuery] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [todaySales, setTodaySales] = useState("0");
-  const [pending, setPending] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     api.get("/customers/?page_size=1000").then((r) => setCustomers(r.data.results || r.data));
-    api.get("/variants/?page_size=1000").then((r) => setVariants(r.data.results || r.data));
-    const today = new Date().toISOString().slice(0, 10);
-    api.get(`/sales/report/?start=${today}&end=${today}`).then((r) => setTodaySales(r.data.totals.sales)).catch(() => {});
-    api.get("/sales/?page_size=100").then((r) => {
-      const list = r.data.results || r.data;
-      setPending(list.filter((s: { payment_status: string }) => s.payment_status !== "paid").length);
-    }).catch(() => {});
+    api.get("/products/").then((r) => setProducts(r.data.results || r.data));
   }, []);
-
-  const customer = customers.find((c) => c.id === customerId);
-  const priceFor = (v: VariantOption) =>
-    customer?.customer_type === "wholesale" && Number(v.wholesale_price) > 0 ? v.wholesale_price : v.retail_price;
 
   const filtered = useMemo(() => {
     const q = productQuery.trim().toLowerCase();
-    const list = q ? variants.filter((v) => v.ware_name.toLowerCase().includes(q)) : variants;
-    return list.slice(0, 12);
-  }, [variants, productQuery]);
+    const list = q ? products.filter((p) => p.name.toLowerCase().includes(q)) : products;
+    return [...list].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 12);
+  }, [products, productQuery]);
 
-  const addToCart = (v: VariantOption) => {
+  const customer = customers.find((c) => c.id === customerId);
+
+  const addToCart = (p: Product) => {
     setCart((prev) => {
-      const existing = prev.find((l) => l.variant.id === v.id);
-      if (existing) return prev.map((l) => (l.variant.id === v.id ? { ...l, quantity: l.quantity + 1 } : l));
-      return [...prev, { variant: v, quantity: 1 }];
+      const existing = prev.find((l) => l.product.id === p.id);
+      if (existing) return prev.map((l) => (l.product.id === p.id ? { ...l, quantity: l.quantity + 1 } : l));
+      return [...prev, { product: p, quantity: 1 }];
     });
   };
   const setQty = (id: number, delta: number) =>
-    setCart((prev) =>
-      prev
-        .map((l) => (l.variant.id === id ? { ...l, quantity: l.quantity + delta } : l))
-        .filter((l) => l.quantity > 0)
-    );
+    setCart((prev) => prev.map((l) => (l.product.id === id ? { ...l, quantity: l.quantity + delta } : l)).filter((l) => l.quantity > 0));
 
-  const subtotal = cart.reduce((s, l) => s + Number(priceFor(l.variant)) * l.quantity, 0);
+  const subtotal = cart.reduce((s, l) => s + Number(l.product.price) * l.quantity, 0);
   const vat = (subtotal * VAT_RATE) / 100;
   const total = subtotal + vat;
   const itemCount = cart.reduce((s, l) => s + l.quantity, 0);
@@ -77,7 +65,7 @@ const PointOfSale = () => {
         customer: customerId,
         vat_rate: VAT_RATE,
         discount: "0",
-        items: cart.map((l) => ({ variant: l.variant.id, quantity: l.quantity, unit_price: priceFor(l.variant) })),
+        items: cart.map((l) => ({ product: l.product.id, quantity: l.quantity, unit_price: l.product.price })),
       });
       navigate(`/sales/${res.data.id}`);
     } catch (err: unknown) {
@@ -90,23 +78,6 @@ const PointOfSale = () => {
   return (
     <div className="page-container">
       <PageHeader eyebrow="Point of sale" title="New sale" description="Add products to the cart and complete the sale." />
-
-      <section className="stat-cards">
-        <div className="surface stat-card">
-          <div>
-            <div className="stat-card__value">{pending}</div>
-            <div className="stat-card__label">Pending · orders to fulfil</div>
-          </div>
-          <span className="stat-card__icon stat-card__icon--amber"><Clock size={22} /></span>
-        </div>
-        <div className="surface stat-card">
-          <div>
-            <div className="stat-card__value">{formatNaira(todaySales)}</div>
-            <div className="stat-card__label">Today’s sales</div>
-          </div>
-          <span className="stat-card__icon stat-card__icon--green"><BarChart3 size={22} /></span>
-        </div>
-      </section>
 
       {error && <div className="notice notice--error" role="alert">{error}</div>}
 
@@ -123,7 +94,6 @@ const PointOfSale = () => {
                 <Link className="button button--ghost" to="/customers/add"><UserPlus size={16} /> Add new</Link>
               </div>
             </div>
-
             <label className="field">
               <span>Products</span>
               <div className="topbar__search" style={{ maxWidth: "none" }}>
@@ -133,20 +103,17 @@ const PointOfSale = () => {
             </label>
           </div>
 
-          <h3 style={{ margin: "0 0 12px", color: "var(--ink-900)" }}>Popular products</h3>
           <div className="pos-products">
-            {filtered.map((v) => (
-              <button key={v.id} className="pos-product" onClick={() => addToCart(v)} type="button" disabled={v.stock <= 0}>
-                {v.ware_image && (
-                  <img
-                    src={v.ware_image}
-                    alt={v.ware_name}
-                    style={{ width: "100%", height: 90, objectFit: "contain", marginBottom: 8 }}
-                  />
+            {filtered.map((p) => (
+              <button key={p.id} className="pos-product" onClick={() => addToCart(p)} type="button" disabled={p.stock <= 0}>
+                {p.image ? (
+                  <img src={p.image} alt="" style={{ width: "100%", height: 80, objectFit: "contain", marginBottom: 8 }} />
+                ) : (
+                  <span style={{ display: "grid", placeItems: "center", height: 80, marginBottom: 8, color: "var(--brand)" }}><Package size={28} /></span>
                 )}
-                <span className="pos-product__name">{v.ware_name}</span>
-                <span className="pos-product__meta">{v.size_detail.size}{v.size_detail.size_unit ?? ""} · stock {v.stock}</span>
-                <span className="pos-product__price">{formatNaira(priceFor(v))}</span>
+                <span className="pos-product__name">{p.name}</span>
+                <span className="pos-product__meta">stock {p.stock}</span>
+                <span className="pos-product__price">{formatNaira(p.price)}</span>
               </button>
             ))}
             {filtered.length === 0 && <p style={{ color: "var(--ink-600)" }}>No products found.</p>}
@@ -161,15 +128,15 @@ const PointOfSale = () => {
           ) : (
             <>
               {cart.map((l) => (
-                <div className="pos-cart-row" key={l.variant.id}>
+                <div className="pos-cart-row" key={l.product.id}>
                   <div>
-                    <div className="pos-cart-row__name">{l.variant.ware_name}</div>
-                    <div className="pos-cart-row__meta">{formatNaira(priceFor(l.variant))} each</div>
+                    <div className="pos-cart-row__name">{l.product.name}</div>
+                    <div className="pos-cart-row__meta">{formatNaira(l.product.price)} each</div>
                   </div>
                   <div className="pos-qty">
-                    <button type="button" onClick={() => setQty(l.variant.id, -1)} aria-label="Decrease"><Minus size={13} /></button>
+                    <button type="button" onClick={() => setQty(l.product.id, -1)} aria-label="Decrease"><Minus size={13} /></button>
                     <span>{l.quantity}</span>
-                    <button type="button" onClick={() => setQty(l.variant.id, 1)} aria-label="Increase"><Plus size={13} /></button>
+                    <button type="button" onClick={() => setQty(l.product.id, 1)} aria-label="Increase" disabled={l.quantity >= l.product.stock}><Plus size={13} /></button>
                   </div>
                 </div>
               ))}

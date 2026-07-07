@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { LogOut, Leaf, ShoppingCart, Boxes, Users, IdCard, BarChart3, Settings } from "lucide-react";
+import { LogOut, Leaf, ShoppingCart, Boxes, Users } from "lucide-react";
 import { sidebarNavigation, activeGroupKey, type NavGroup } from "../../config/navigation";
 import { clearSession } from "../../utils/auth";
 
@@ -7,9 +7,6 @@ const icons = {
   sales: ShoppingCart,
   inventory: Boxes,
   customers: Users,
-  staff: IdCard,
-  reports: BarChart3,
-  settings: Settings,
 };
 
 interface SidebarProps {
