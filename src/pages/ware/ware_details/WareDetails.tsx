@@ -72,7 +72,7 @@ useEffect(() => {
           <h1>{ware.name}</h1>
           {ware.description && <p className="page-header__description">{ware.description}</p>}
         </div>
-        {userRole.role === 'admin' && (
+        {userRole.canManage && (
           <div className="page-actions page-header__action">
             <button
               className="button button--primary"
@@ -128,33 +128,39 @@ useEffect(() => {
                 <span>Wholesale <strong style={{ color: 'var(--brand)' }}>{formatPrice((variant as typeof variant & { wholesale_price?: string }).wholesale_price ?? variant.price)}</strong></span>
                 <span className="customer-chip">{variant.is_available ? 'In stock' : 'Out of stock'}</span>
               </div>
-              {userRole.role === 'admin' && (
+              {(userRole.canManage || userRole.canStock) && (
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => {
-                      setSelectedVariantId(variant.id);
-                      setBatchToEdit(null);
-                      setShowBatchModal(true);
-                    }}
-                    className="button button--accent button--small"
-                  >
-                    Add stock
-                  </button>
-                  <button
-                    onClick={() => {
-                      setVariantToEdit(variant);
-                      setShowVariantModal(true);
-                    }}
-                    className="button button--ghost button--small"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteVariant(variant.id)}
-                    className="button button--danger button--small"
-                  >
-                    Delete
-                  </button>
+                  {userRole.canStock && (
+                    <button
+                      onClick={() => {
+                        setSelectedVariantId(variant.id);
+                        setBatchToEdit(null);
+                        setShowBatchModal(true);
+                      }}
+                      className="button button--accent button--small"
+                    >
+                      Add stock
+                    </button>
+                  )}
+                  {userRole.canManage && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setVariantToEdit(variant);
+                          setShowVariantModal(true);
+                        }}
+                        className="button button--ghost button--small"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteVariant(variant.id)}
+                        className="button button--danger button--small"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -168,7 +174,7 @@ useEffect(() => {
                     <th>Manufactured</th>
                     <th>Expires</th>
                     <th>Status</th>
-                    {userRole.role === 'admin' && <th />}
+                    {userRole.canStock && <th />}
                   </tr>
                 </thead>
                 <tbody>
@@ -183,7 +189,7 @@ useEffect(() => {
                           {batch.is_expired ? 'Expired' : 'Fresh'}
                         </span>
                       </td>
-                      {userRole.role === 'admin' && (
+                      {userRole.canStock && (
                         <td style={{ textAlign: 'right' }}>
                           <span style={{ display: 'inline-flex', gap: '8px' }}>
                             <button

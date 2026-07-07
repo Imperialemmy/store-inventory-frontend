@@ -7,7 +7,7 @@ import { formatNaira } from "../salesTypes";
 
 interface CustomerOption { id: number; name: string; customer_type: "wholesale" | "retail"; }
 interface VariantOption {
-  id: number; ware_name: string;
+  id: number; ware_name: string; ware_image: string | null;
   size_detail: { size: string; size_unit: string | null };
   retail_price: string; wholesale_price: string; stock: number;
 }
@@ -137,6 +137,13 @@ const PointOfSale = () => {
           <div className="pos-products">
             {filtered.map((v) => (
               <button key={v.id} className="pos-product" onClick={() => addToCart(v)} type="button" disabled={v.stock <= 0}>
+                {v.ware_image && (
+                  <img
+                    src={v.ware_image}
+                    alt={v.ware_name}
+                    style={{ width: "100%", height: 90, objectFit: "contain", marginBottom: 8 }}
+                  />
+                )}
                 <span className="pos-product__name">{v.ware_name}</span>
                 <span className="pos-product__meta">{v.size_detail.size}{v.size_detail.size_unit ?? ""} · stock {v.stock}</span>
                 <span className="pos-product__price">{formatNaira(priceFor(v))}</span>

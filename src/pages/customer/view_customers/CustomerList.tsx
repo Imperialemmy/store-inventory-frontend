@@ -34,14 +34,14 @@ const CustomerList = () => {
       title="Customers"
       eyebrow="Customer directory"
       description="Wholesale and retail customers, their credit, and outstanding balances."
-      createPath={userRole.isAdmin ? "/customers/add" : undefined}
+      createPath={userRole.canSell ? "/customers/add" : undefined}
       createLabel="Add customer"
       items={customers}
       itemKey={(item) => item.id}
-      enableSelection={userRole?.role === "admin"}
+      enableSelection={userRole.canSell}
       onItemClick={(id) => navigate(`/customers/${id}`)}
       renderToolbar={(selectedIds, clear, toggleAll) =>
-        userRole.role === "admin" && (
+        userRole.canSell && (
           <BulkSelectToolbar
             items={customers}
             selectedIds={selectedIds as number[]}

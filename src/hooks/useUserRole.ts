@@ -20,8 +20,14 @@ export const getUsername = (): string => {
 export const useUserRole = () => {
   const role = getUserRole();
   return {
-    isAdmin: role === "admin",
     role,
     username: getUsername(),
+    isAdmin: role === "admin",
+    /** Catalog/config/expense management: admins and managers. */
+    canManage: role === "admin" || role === "manager",
+    /** Stock operations (batches): admins, managers and warehouse staff. */
+    canStock: role === "admin" || role === "manager" || role === "warehouse",
+    /** Customer/sales creation: admins, managers and sales staff. */
+    canSell: role === "admin" || role === "manager" || role === "sales",
   };
 };

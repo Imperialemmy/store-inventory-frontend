@@ -29,7 +29,7 @@ const ExpenseList = () => {
         description="Every cost the business records, by category and payment method."
         action={
           <div className="page-actions">
-            {userRole.isAdmin && <Link className="button button--primary" to="/expenses/add"><Plus size={16} /> Add expense</Link>}
+            {userRole.canManage && <Link className="button button--primary" to="/expenses/add"><Plus size={16} /> Add expense</Link>}
           </div>
         }
       />

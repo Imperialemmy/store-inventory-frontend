@@ -64,14 +64,14 @@ const SizeList = () => {
       <GenericList
         title="Sizes"
         description="Reusable packaging measurements linked to products across the store."
-        createPath={userRole.isAdmin ? "/sizes/add" : undefined}
+        createPath={userRole.canManage ? "/sizes/add" : undefined}
         createLabel="Add size"
         items={sizes}
         itemKey={(item) => item.id}
-        enableSelection={userRole?.role === "admin"}
+        enableSelection={userRole.canManage}
         onItemClick={handleItemClick}
         renderToolbar={(selectedIds, clear, toggleAll) => 
-          userRole.role === "admin" && (
+          userRole.canManage && (
           <BulkSelectToolbar
             items={sizes}
             selectedIds={selectedIds as number[]}

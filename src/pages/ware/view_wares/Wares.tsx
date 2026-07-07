@@ -6,11 +6,13 @@ import PageHeader from "../../../components/ui/PageHeader";
 import { useUserRole } from "../../../hooks/useUserRole";
 
 interface Variant { stock?: number; retail_price?: string; price?: string; }
+interface WareImage { id: number; url: string; alt_text: string | null; }
 interface Ware {
   id: number;
   name: string;
   category_detail?: { name: string };
   variants?: Variant[];
+  images?: WareImage[];
 }
 
 const PER_PAGE = 8;
@@ -24,7 +26,7 @@ const naira = (n: number) => new Intl.NumberFormat("en-NG", { style: "currency",
 
 const WareList = () => {
   const navigate = useNavigate();
-  const { isAdmin } = useUserRole();
+  const { canManage } = useUserRole();
   const [wares, setWares] = useState<Ware[]>([]);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -54,7 +56,7 @@ const WareList = () => {
         eyebrow="Inventory"
         title="All Products"
         description="Manage your inventory."
-        action={isAdmin ? <Link className="button button--primary" to="/add-ware"><Plus size={16} /> Add Product</Link> : undefined}
+        action={canManage ? <Link className="button button--primary" to="/add-ware"><Plus size={16} /> Add Product</Link> : undefined}
       />
 
       <section className="surface list-surface">
@@ -88,9 +90,17 @@ const WareList = () => {
                 <tr key={w.id} style={{ cursor: "pointer" }} onClick={() => navigate(`/wares/${w.id}`)}>
                   <td>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <span style={{ width: 40, height: 40, borderRadius: 10, background: "var(--brand-soft)", color: "var(--brand)", display: "grid", placeItems: "center", flex: "0 0 auto" }}>
-                        <Package size={18} />
-                      </span>
+                      {w.images && w.images.length > 0 ? (
+                        <img
+                          src={w.images[0].url}
+                          alt={w.images[0].alt_text ?? w.name}
+                          style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover", flex: "0 0 auto", background: "var(--brand-soft)" }}
+                        />
+                      ) : (
+                        <span style={{ width: 40, height: 40, borderRadius: 10, background: "var(--brand-soft)", color: "var(--brand)", display: "grid", placeItems: "center", flex: "0 0 auto" }}>
+                          <Package size={18} />
+                        </span>
+                      )}
                       <span style={{ fontWeight: 700, color: "var(--ink-900)" }}>{w.name}</span>
                     </div>
                   </td>

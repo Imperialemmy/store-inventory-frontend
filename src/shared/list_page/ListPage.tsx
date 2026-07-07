@@ -41,14 +41,14 @@ function ListPage<T extends { id: number }>({ title, apiEndpoint, itemKey, itemN
   return (
     <GenericList
       title={title}
-      createPath={userRole.isAdmin ? createPath : undefined}
+      createPath={userRole.canManage ? createPath : undefined}
       createLabel={createLabel}
       items={items}
       itemKey={itemKey}
       onItemClick={(id: string | number) => navigate(navigateTo(Number(id)))}
-      enableSelection={userRole?.role === "admin"}
+      enableSelection={userRole.canManage}
       renderToolbar={(selectedIds, clear, toggleAll) =>
-        userRole.role === "admin" && (
+        userRole.canManage && (
           <BulkSelectToolbar
             items={items}
             selectedIds={selectedIds as number[]}

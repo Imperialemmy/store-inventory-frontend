@@ -19,6 +19,11 @@ const SaleDetail = () => {
   const [payError, setPayError] = useState<string | null>(null);
   const [savingPay, setSavingPay] = useState(false);
 
+  const [returnQty, setReturnQty] = useState<Record<number, string>>({});
+  const [returnReason, setReturnReason] = useState("");
+  const [returnError, setReturnError] = useState<string | null>(null);
+  const [savingReturn, setSavingReturn] = useState(false);
+
   const fetchSale = useCallback(async () => {
     try {
       setLoading(true);
@@ -49,6 +54,31 @@ const SaleDetail = () => {
       setPayError("Could not record the payment.");
     } finally {
       setSavingPay(false);
+    }
+  };
+
+  const handleReturn = async (event: FormEvent) => {
+    event.preventDefault();
+    setReturnError(null);
+    const items = Object.entries(returnQty)
+      .map(([saleItem, qty]) => ({ sale_item: Number(saleItem), quantity: Number(qty) }))
+      .filter((row) => row.quantity > 0);
+    if (items.length === 0) return setReturnError("Enter a quantity to return.");
+    setSavingReturn(true);
+    try {
+      await api.post("/credit-notes/", {
+        sale: Number(saleId),
+        reason: returnReason || null,
+        items,
+      });
+      setReturnQty({});
+      setReturnReason("");
+      await fetchSale();
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: unknown } })?.response?.data;
+      setReturnError(Array.isArray(detail) ? String(detail[0]) : "Could not record the return.");
+    } finally {
+      setSavingReturn(false);
     }
   };
 
@@ -130,6 +160,9 @@ const SaleDetail = () => {
           <div><dt>VAT ({sale.vat_rate}%)</dt><dd>{formatNaira(sale.vat_amount)}</dd></div>
           <div className="sale-totals__grand"><dt>Total</dt><dd>{formatNaira(sale.total)}</dd></div>
           <div><dt>Paid</dt><dd>{formatNaira(sale.amount_paid)}</dd></div>
+          {Number(sale.amount_credited) > 0 && (
+            <div><dt>Credited (returns)</dt><dd>− {formatNaira(sale.amount_credited)}</dd></div>
+          )}
           <div className="sale-totals__grand"><dt>Balance due</dt><dd>{formatNaira(sale.balance)}</dd></div>
         </dl>
 
@@ -186,6 +219,76 @@ const SaleDetail = () => {
               </button>
             </div>
           </form>
+        )}
+      </section>
+
+      {/* Returns / credit notes (not printed) */}
+      <section className="surface form-card no-print" style={{ marginTop: "18px" }}>
+        <h3 style={{ marginTop: 0, color: "var(--leaf-950)" }}>Returns</h3>
+
+        {sale.credit_notes.length > 0 && (
+          <table className="glass-table" style={{ marginBottom: "18px" }}>
+            <thead>
+              <tr><th>Date</th><th>Items</th><th>Reason</th><th style={{ textAlign: "right" }}>Credited</th></tr>
+            </thead>
+            <tbody>
+              {sale.credit_notes.map((note) => (
+                <tr key={note.id}>
+                  <td>{note.created_at.slice(0, 10)}</td>
+                  <td>{note.items.map((i) => `${i.quantity} × ${i.variant_label}`).join(", ")}</td>
+                  <td>{note.reason || "—"}</td>
+                  <td style={{ textAlign: "right" }}>{formatNaira(note.amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {userRole.canSell && sale.items.some((i) => i.quantity - (i.returned_quantity ?? 0) > 0) ? (
+          <form onSubmit={handleReturn}>
+            {returnError && <div className="notice notice--error" role="alert">{returnError}</div>}
+            <table className="glass-table" style={{ marginBottom: "14px" }}>
+              <thead>
+                <tr><th>Item</th><th style={{ textAlign: "right" }}>Sold</th><th style={{ textAlign: "right" }}>Returned</th><th style={{ width: 120 }}>Return now</th></tr>
+              </thead>
+              <tbody>
+                {sale.items.map((item) => {
+                  const returnable = item.quantity - (item.returned_quantity ?? 0);
+                  return (
+                    <tr key={item.id}>
+                      <td>{item.variant_label}</td>
+                      <td style={{ textAlign: "right" }}>{item.quantity}</td>
+                      <td style={{ textAlign: "right" }}>{item.returned_quantity ?? 0}</td>
+                      <td>
+                        <input
+                          type="number"
+                          min={0}
+                          max={returnable}
+                          disabled={returnable <= 0}
+                          value={returnQty[item.id!] ?? ""}
+                          onChange={(e) => setReturnQty((prev) => ({ ...prev, [item.id!]: e.target.value }))}
+                          style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--line-strong)", borderRadius: "9px", background: "#faf9f5" }}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="form-grid sale-summary__inputs" style={{ gridTemplateColumns: "1fr" }}>
+              <label className="field">
+                <span>Reason</span>
+                <input value={returnReason} onChange={(e) => setReturnReason(e.target.value)} placeholder="e.g. Damaged in transit" />
+              </label>
+            </div>
+            <div className="form-actions">
+              <button className="button button--accent" type="submit" disabled={savingReturn}>
+                {savingReturn ? "Saving…" : "Record return"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          sale.credit_notes.length === 0 && <p style={{ color: "var(--ink-600)" }}>No returns recorded.</p>
         )}
       </section>
     </div>

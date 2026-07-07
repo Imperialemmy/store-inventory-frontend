@@ -27,7 +27,14 @@ import SalesList from './pages/sales/view_sales/SalesList';
 import PointOfSale from './pages/sales/pos/PointOfSale';
 import SaleDetail from './pages/sales/sale_details/SaleDetail';
 import SalesReport from './pages/sales/reports/SalesReport';
+import DebtAging from './pages/sales/reports/DebtAging';
 import Settings from './pages/settings/Settings';
+import EmployeeList from './pages/staff/EmployeeList';
+import EmployeeForm from './pages/staff/EmployeeForm';
+import AttendancePage from './pages/staff/AttendancePage';
+import LeavePage from './pages/staff/LeavePage';
+import PayrollPage from './pages/staff/PayrollPage';
+import PayrollRunDetail from './pages/staff/PayrollRunDetail';
 import ExpenseList from './pages/expense/view_expenses/ExpenseList';
 import AddExpense from './pages/expense/add_expenses/AddExpense';
 import ExpenseCategoryList from './pages/expense/categories/ExpenseCategoryList';
@@ -70,6 +77,12 @@ const App = () => {
             <Route path="/expenses" element={<ExpenseList />} />
             <Route path="/expenses/report" element={<ExpenseReport />} />
             <Route path="/expenses/categories" element={<ExpenseCategoryList />} />
+            <Route path="/reports/debt-aging" element={<DebtAging />} />
+            <Route path="/staff/employees" element={<EmployeeList />} />
+            <Route path="/staff/attendance" element={<AttendancePage />} />
+            <Route path="/staff/leave" element={<LeavePage />} />
+            <Route path="/staff/payroll" element={<PayrollPage />} />
+            <Route path="/staff/payroll/:runId" element={<PayrollRunDetail />} />
             <Route element={<AdminRoute />}>
               <Route path="/add-ware" element={<ErrorBoundary><AddWare /></ErrorBoundary>} />
               <Route path="/brands/add" element={<AddBrand />} />
@@ -81,6 +94,8 @@ const App = () => {
               <Route path="/customers/:customerId/edit" element={<CustomerForm />} />
               <Route path="/expenses/add" element={<AddExpense />} />
               <Route path="/expenses/categories/add" element={<AddExpenseCategory />} />
+              <Route path="/staff/employees/add" element={<EmployeeForm />} />
+              <Route path="/staff/employees/:employeeId/edit" element={<EmployeeForm />} />
               <Route path="/wares/:wareId/variants/new" element={<WareVariantForm />} />
               <Route path="/wares/:wareId/variants/:variantId/edit" element={<WareVariantForm />} />
             </Route>

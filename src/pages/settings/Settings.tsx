@@ -11,7 +11,7 @@ const configLinks = [
 ];
 
 const Settings = () => {
-  const { username, role } = useUserRole();
+  const { username, role, canManage } = useUserRole();
 
   return (
     <div className="page-container">
@@ -38,9 +38,9 @@ const Settings = () => {
         ))}
       </div>
 
-      {role !== "admin" && (
+      {!canManage && (
         <p style={{ marginTop: "18px", color: "var(--ink-600)" }}>
-          Some configuration is only available to administrators.
+          Some configuration is only available to administrators and managers.
         </p>
       )}
     </div>

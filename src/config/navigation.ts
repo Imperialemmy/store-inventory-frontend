@@ -7,7 +7,7 @@ export interface NavGroup {
   key: string;
   label: string;
   to: string;
-  icon: "sales" | "inventory" | "customers" | "reports" | "settings";
+  icon: "sales" | "inventory" | "customers" | "staff" | "reports" | "settings";
   /** Path prefixes that mark this group active (longest match wins). */
   match: string[];
   sub?: SubNavItem[];
@@ -49,15 +49,29 @@ export const sidebarNavigation: NavGroup[] = [
     match: ["/customers"],
   },
   {
+    key: "staff",
+    label: "Staff",
+    to: "/staff/employees",
+    icon: "staff",
+    match: ["/staff"],
+    sub: [
+      { to: "/staff/employees", label: "Employees" },
+      { to: "/staff/attendance", label: "Attendance" },
+      { to: "/staff/leave", label: "Leave" },
+      { to: "/staff/payroll", label: "Payroll" },
+    ],
+  },
+  {
     key: "reports",
     label: "Reports",
     to: "/sales/reports",
     icon: "reports",
-    match: ["/sales/reports", "/expenses"],
+    match: ["/sales/reports", "/expenses", "/reports"],
     sub: [
       { to: "/sales/reports", label: "Sales" },
       { to: "/expenses/report", label: "Profit & Loss" },
       { to: "/expenses", label: "Expenses" },
+      { to: "/reports/debt-aging", label: "Debt aging" },
     ],
   },
   {
