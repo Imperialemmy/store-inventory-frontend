@@ -106,8 +106,9 @@ const ProductsPage = () => {
 
   return (
     <div className="page-container page-container--narrow">
-      <div className="surface list-surface" style={{ position: "relative" }}>
-        <div className="search-box" style={{ gridTemplateColumns: canManage ? "auto 1fr auto" : "auto 1fr" }}>
+      {/* Search bar (its own card so the dialog can float free of the list's clip) */}
+      <div className="surface" style={{ position: "relative", marginBottom: "14px" }}>
+        <div className="search-box" style={{ borderBottom: "none", gridTemplateColumns: canManage ? "auto 1fr auto" : "auto 1fr" }}>
           <Search size={18} />
           <input
             type="search"
@@ -164,7 +165,10 @@ const ProductsPage = () => {
             </form>
           </div>
         )}
+      </div>
 
+      {/* Product list (its own card) */}
+      <div className="surface list-surface">
         {loading ? (
           <div className="empty-state"><strong>Loading…</strong></div>
         ) : visible.length === 0 ? (
