@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search, Plus, Package, X, Trash2 } from "lucide-react";
 import api from "../../services/api";
 import { useUserRole } from "../../hooks/useUserRole";
@@ -18,8 +19,10 @@ const emptyDraft = { id: 0, name: "", price: "", stock: "" };
 
 const ProductsPage = () => {
   const { canManage } = useUserRole();
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
-  const [query, setQuery] = useState("");
+  // Seed from ?q= so the topbar search lands here pre-filtered.
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [loading, setLoading] = useState(true);
 
   const [open, setOpen] = useState(false);
