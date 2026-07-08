@@ -98,8 +98,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .notif-panel__item:hover { background: #f5f4ee; color: var(--ink-900); }
 .notif-panel__item svg { flex: 0 0 auto; margin-top: 2px; color: var(--amber); }
 
-/* Inline product add/edit popover */
-.product-pop { position: absolute; right: 14px; top: 60px; z-index: 30; width: min(340px, calc(100% - 28px)); padding: 16px; }
+/* Inline product add/edit popover — anchored under the search card's + button */
+.product-pop { position: absolute; right: 10px; top: calc(100% + 8px); z-index: 30; width: min(340px, calc(100% - 20px)); padding: 16px; }
 .product-pop__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; color: var(--ink-900); }
 .product-pop__close { border: 0; background: transparent; color: var(--ink-600); cursor: pointer; padding: 4px; border-radius: 8px; }
 .product-pop__close:hover { background: #f5f4ee; }
