@@ -1,10 +1,20 @@
 export interface SaleItem {
   id?: number;
-  variant: number;
-  variant_label?: string;
+  product: number;
+  product_name?: string;
   quantity: number;
   unit_price: string;
   line_total?: string;
+  returned_quantity?: number;
+}
+
+export interface CreditNote {
+  id: number;
+  sale: number;
+  reason: string | null;
+  amount: string;
+  created_at: string;
+  items: { id: number; sale_item: number; product_name: string; quantity: number; unit_price: string }[];
 }
 
 export interface Payment {
@@ -31,11 +41,13 @@ export interface Sale {
   vat_amount: string;
   total: string;
   amount_paid: string;
+  amount_credited: string;
   balance: string;
   payment_status: "pending" | "partial" | "paid";
   notes: string | null;
   items: SaleItem[];
   payments: Payment[];
+  credit_notes: CreditNote[];
   created_at: string;
 }
 

@@ -1,14 +1,18 @@
 import { jwtDecode } from 'jwt-decode';
 import { isTokenValid } from './auth';
 
+export type Role = 'admin' | 'manager' | 'sales' | 'warehouse' | 'user';
+
+const ROLES: Role[] = ['admin', 'manager', 'sales', 'warehouse', 'user'];
+
 interface JwtPayload {
   user_id: number;
   username: string;
-  role: 'admin' | 'user';
+  role: string;
   exp: number;
 }
 
-export function getUserRole(): 'admin' | 'user' {
+export function getUserRole(): Role {
   const token = localStorage.getItem('access_token');
   if (!token || !isTokenValid(token)) {
     return 'user';
@@ -16,8 +20,7 @@ export function getUserRole(): 'admin' | 'user' {
 
   try {
     const decoded = jwtDecode<JwtPayload>(token);
-    // console.log('[getUserRole] Decoded token:', decoded); // 👈 Check this in the browser console
-    return decoded.role === 'admin' ? 'admin' : 'user';
+    return (ROLES as string[]).includes(decoded.role) ? (decoded.role as Role) : 'user';
   } catch (error) {
     console.error('[getUserRole] Failed to decode token:', error);
     return 'user';

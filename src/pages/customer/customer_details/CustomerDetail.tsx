@@ -56,7 +56,7 @@ const CustomerDetail = () => {
         title={customer.name}
         description={`${customer.customer_type_display} customer${customer.city ? ` · ${customer.city}` : ""}`}
         action={
-          userRole.role === "admin" ? (
+          userRole.canSell ? (
             <div className="page-actions">
               <Link className="button button--ghost" to={`/customers/${customer.id}/edit`}>Edit</Link>
               <button className="button button--danger" onClick={handleDelete}>Delete</button>
