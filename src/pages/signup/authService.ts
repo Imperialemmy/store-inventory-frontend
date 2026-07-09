@@ -1,12 +1,13 @@
-import api from '../../services/api'; // your axios instance
+import api from '../../services/api';
 
-interface SignupPayload {
+export interface SignupPayload {
   username: string;
   first_name: string;
   last_name: string;
   email: string;
   password: string;
   phone_number: string;
+  admin_code?: string;
 }
 
 export const signupUser = async (payload: SignupPayload) => {

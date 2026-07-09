@@ -19,7 +19,7 @@ const formatSignupError = (payload?: ValidationPayload) => {
     .join(' ');
 };
 
-export const useSignup = () => {
+export const useSignup = (isAdmin: boolean) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -29,7 +29,8 @@ export const useSignup = () => {
     setError(null);
     try {
       await signupUser(data);
-      navigate('/login');
+      // Admins are active immediately; sellers wait for admin approval.
+      navigate(isAdmin ? '/login' : '/login?pending=1');
     } catch (err: unknown) {
       const message = axios.isAxiosError<ValidationPayload>(err)
         ? formatSignupError(err.response?.data)
