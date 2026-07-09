@@ -40,12 +40,12 @@
 .authField input:focus { border-color: var(--brand); background: var(--surface); box-shadow: 0 0 0 3px rgba(31,74,49,.12); }
 /* Leave room for our eye toggle and hide the browser's native reveal/key
    button so the two icons don't overlap. */
-.authInputWrap input { padding-right: 44px; }
-.authField input::-ms-reveal,
-.authField input::-ms-clear { display: none; }
-.authField input::-webkit-credentials-auto-fill-button,
-.authField input::-webkit-strong-password-auto-fill-button,
-.authField input::-webkit-caps-lock-indicator { visibility: hidden; display: none !important; pointer-events: none; }
+.authInputWrap input { padding-right: 44px !important; }
+.authInputWrap input::-ms-reveal,
+.authInputWrap input::-ms-clear { display: none; }
+.authInputWrap input::-webkit-credentials-auto-fill-button,
+.authInputWrap input::-webkit-strong-password-auto-fill-button,
+.authInputWrap input::-webkit-caps-lock-indicator { visibility: hidden; display: none !important; pointer-events: none; }
 .passwordToggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 0; border-radius: 8px; padding: 8px; background: transparent; color: var(--ink-600); cursor: pointer; z-index: 2; }
 .submitButton { width: 100%; min-height: 46px; margin-top: 4px; border: 0; border-radius: 11px; color: #fff; background: var(--brand); font-weight: 800; cursor: pointer; box-shadow: 0 8px 20px rgba(31,74,49,.2); transition: background .15s, transform .1s; }
 .submitButton:hover { background: var(--brand-strong); }

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, ShoppingCart, Plus, Minus, UserPlus, Package } from "lucide-react";
+import { Search, ShoppingCart, Plus, Minus, UserPlus, Package, ChevronDown } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import { formatNaira } from "../salesTypes";
@@ -22,15 +22,39 @@ const PointOfSale = () => {
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [customerId, setCustomerId] = useState<number | "">("");
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [customerOpen, setCustomerOpen] = useState(false);
   const [productQuery, setProductQuery] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const comboRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     api.get("/customers/?page_size=1000").then((r) => setCustomers(r.data.results || r.data));
     api.get("/products/").then((r) => setProducts(r.data.results || r.data));
   }, []);
+
+  useEffect(() => {
+    if (!customerOpen) return;
+    const close = (e: MouseEvent) => {
+      if (comboRef.current && !comboRef.current.contains(e.target as Node)) setCustomerOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [customerOpen]);
+
+  const customerMatches = useMemo(() => {
+    const q = customerSearch.trim().toLowerCase();
+    const list = q ? customers.filter((c) => c.name.toLowerCase().includes(q)) : customers;
+    return [...list].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 8);
+  }, [customers, customerSearch]);
+
+  const selectCustomer = (c: CustomerOption) => {
+    setCustomerId(c.id);
+    setCustomerSearch(c.name);
+    setCustomerOpen(false);
+  };
 
   const filtered = useMemo(() => {
     const q = productQuery.trim().toLowerCase();
@@ -87,10 +111,44 @@ const PointOfSale = () => {
             <div className="field" style={{ marginBottom: "14px" }}>
               <span>Customer</span>
               <div style={{ display: "flex", gap: "10px" }}>
-                <select value={customerId} onChange={(e) => setCustomerId(e.target.value ? Number(e.target.value) : "")} style={{ flex: 1 }}>
-                  <option value="">Search customer…</option>
-                  {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <div className="combo" ref={comboRef} style={{ flex: 1 }}>
+                  <div className="topbar__search" style={{ maxWidth: "none" }}>
+                    <Search size={18} />
+                    <input
+                      value={customerSearch}
+                      onChange={(e) => { setCustomerSearch(e.target.value); setCustomerId(""); setCustomerOpen(true); }}
+                      onFocus={() => setCustomerOpen(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") setCustomerOpen(false);
+                        if (e.key === "Enter" && customerMatches.length) { e.preventDefault(); selectCustomer(customerMatches[0]); }
+                      }}
+                      placeholder="Search customer…"
+                      aria-label="Search customer"
+                    />
+                    <button type="button" className="combo__toggle" onClick={() => setCustomerOpen((o) => !o)} aria-label="Show customers">
+                      <ChevronDown size={18} />
+                    </button>
+                  </div>
+                  {customerOpen && (
+                    <ul className="combo__menu">
+                      {customerMatches.length === 0 ? (
+                        <li className="combo__empty">No customers found.</li>
+                      ) : (
+                        customerMatches.map((c) => (
+                          <li key={c.id}>
+                            <button
+                              type="button"
+                              className={`combo__item${c.id === customerId ? " combo__item--active" : ""}`}
+                              onClick={() => selectCustomer(c)}
+                            >
+                              {c.name}
+                            </button>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  )}
+                </div>
                 <Link className="button button--ghost" to="/customers/add"><UserPlus size={16} /> Add new</Link>
               </div>
             </div>
