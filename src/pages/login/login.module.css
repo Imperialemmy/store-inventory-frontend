@@ -16,15 +16,15 @@
   justify-content: space-between;
   padding: clamp(32px, 5vw, 64px);
   color: #fff;
-  background: linear-gradient(160deg, rgba(22,53,33,.92), rgba(31,74,49,.72)), url('/login/testx.jpg') center/cover;
+  background: linear-gradient(160deg, rgba(15,52,88,.92), rgba(23,74,127,.72)), url('/login/testx.jpg') center/cover;
 }
 .heroBrand { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
 .heroLogo { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,.16); }
 .heroName { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 1.7rem; line-height: 1; }
 .heroCopy { position: relative; z-index: 1; }
 .heroCopy h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 800; letter-spacing: -.03em; line-height: 1.04; max-width: 12ch; }
-.heroCopy p { margin: 14px 0 0; max-width: 42ch; color: #dbe7dd; font-size: 1.02rem; line-height: 1.6; }
-.heroFoot { position: relative; z-index: 1; color: #bcd0c1; font-size: .8rem; }
+.heroCopy p { margin: 14px 0 0; max-width: 42ch; color: #d6e4f2; font-size: 1.02rem; line-height: 1.6; }
+.heroFoot { position: relative; z-index: 1; color: #b7cbe2; font-size: .8rem; }
 
 /* Right: form panel */
 .authPanel { display: grid; place-items: center; padding: clamp(28px, 5vw, 56px); }
@@ -37,7 +37,7 @@
 .authField { display: grid; gap: 7px; color: var(--ink-900); font-size: .82rem; font-weight: 700; }
 .authInputWrap { position: relative; }
 .authField input { width: 100%; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 11px; background: var(--input-bg); color: var(--ink-900); outline: none; transition: border-color .15s, box-shadow .15s, background .15s; }
-.authField input:focus { border-color: var(--brand); background: var(--surface); box-shadow: 0 0 0 3px rgba(31,74,49,.12); }
+.authField input:focus { border-color: var(--brand); background: var(--surface); box-shadow: 0 0 0 3px rgba(28,108,176,.12); }
 /* Leave room for our eye toggle and hide the browser's native reveal/key
    button so the two icons don't overlap. */
 .authInputWrap input { padding-right: 44px !important; }
@@ -47,7 +47,7 @@
 .authInputWrap input::-webkit-strong-password-auto-fill-button,
 .authInputWrap input::-webkit-caps-lock-indicator { visibility: hidden; display: none !important; pointer-events: none; }
 .passwordToggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 0; border-radius: 8px; padding: 8px; background: transparent; color: var(--ink-600); cursor: pointer; z-index: 2; }
-.submitButton { width: 100%; min-height: 46px; margin-top: 4px; border: 0; border-radius: 11px; color: #fff; background: var(--brand); font-weight: 800; cursor: pointer; box-shadow: 0 8px 20px rgba(31,74,49,.2); transition: background .15s, transform .1s; }
+.submitButton { width: 100%; min-height: 46px; margin-top: 4px; border: 0; border-radius: 11px; color: #fff; background: var(--brand); font-weight: 800; cursor: pointer; box-shadow: 0 8px 20px rgba(28,108,176,.2); transition: background .15s, transform .1s; }
 .submitButton:hover { background: var(--brand-strong); }
 .submitButton:active { transform: translateY(1px); }
 .authError { margin: 0; padding: 11px 13px; border: 1px solid #f0c8ba; border-radius: 10px; color: #8a3421; background: var(--danger-soft); font-size: .86rem; }
