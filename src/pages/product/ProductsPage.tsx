@@ -80,6 +80,28 @@ const ProductsPage = () => {
     return products.some((p) => p.id !== draft.id && p.name.trim().toLowerCase() === name);
   }, [products, draft.name, draft.id]);
 
+  // Soft "did you mean an existing one?" check: catches near-duplicates like
+  // "Gino Paste Carton" vs "Gino Paste - Carton". Warns but doesn't block.
+  const similar = useMemo(() => {
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const nb = normalize(draft.name);
+    if (nb.length < 3) return [];
+    const bTokens = new Set(nb.split(" ").filter(Boolean));
+    return products
+      .filter((p) => p.id !== draft.id)
+      .filter((p) => {
+        const na = normalize(p.name);
+        if (na === nb) return false; // exact match handled by `duplicate`
+        if (na.includes(nb) || nb.includes(na)) return true;
+        const aTokens = new Set(na.split(" ").filter(Boolean));
+        const inter = [...aTokens].filter((t) => bTokens.has(t)).length;
+        const union = new Set([...aTokens, ...bTokens]).size;
+        return union > 0 && inter / union >= 0.6;
+      })
+      .map((p) => p.name)
+      .slice(0, 4);
+  }, [products, draft.name, draft.id]);
+
   const save = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -150,6 +172,11 @@ const ProductsPage = () => {
                 <span>Name</span>
                 <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} autoFocus placeholder="e.g. Gino Paste - Carton" />
                 {duplicate && <small style={{ color: "var(--danger)", fontWeight: 600 }}>A product with this name already exists.</small>}
+                {!duplicate && similar.length > 0 && (
+                  <small style={{ color: "var(--amber)", fontWeight: 600 }}>
+                    Similar to: {similar.join(", ")} — check this isn’t a duplicate.
+                  </small>
+                )}
               </label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <label className="field">
