@@ -125,6 +125,14 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .topbar__search { flex: 1; max-width: 460px; display: flex; align-items: center; gap: 10px; padding: 9px 14px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--input-bg); color: var(--ink-600); }
 .topbar__search input { flex: 1; border: 0; outline: 0; background: transparent; color: var(--ink-900); min-width: 0; }
 .topbar__spacer { flex: 1; }
+
+/* Searchable dropdown (combobox), e.g. the POS customer picker */
+.combo { position: relative; }
+.combo__toggle { display: grid; place-items: center; border: 0; background: transparent; color: var(--ink-600); cursor: pointer; padding: 0; }
+.combo__menu { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; right: 0; max-height: 260px; overflow-y: auto; margin: 0; padding: 5px; list-style: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 12px; box-shadow: 0 14px 34px rgba(0,0,0,.16); }
+.combo__item { display: block; width: 100%; text-align: left; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-900); cursor: pointer; font-size: .93rem; }
+.combo__item:hover, .combo__item--active { background: var(--hover); }
+.combo__empty { padding: 10px 12px; color: var(--ink-600); font-size: .88rem; }
 .topbar__bell-wrap { position: relative; }
 .topbar__bell { position: relative; border: 0; background: transparent; color: var(--ink-700); cursor: pointer; padding: 8px; border-radius: 10px; }
 .topbar__bell:hover { background: var(--hover); }
