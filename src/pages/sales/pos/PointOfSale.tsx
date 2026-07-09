@@ -5,7 +5,7 @@ import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import { formatNaira } from "../salesTypes";
 
-interface CustomerOption { id: number; name: string; customer_type: string; }
+interface CustomerOption { id: number; name: string; }
 interface Product {
   id: number;
   name: string;
@@ -89,7 +89,7 @@ const PointOfSale = () => {
               <div style={{ display: "flex", gap: "10px" }}>
                 <select value={customerId} onChange={(e) => setCustomerId(e.target.value ? Number(e.target.value) : "")} style={{ flex: 1 }}>
                   <option value="">Search customer…</option>
-                  {customers.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.customer_type})</option>)}
+                  {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
                 <Link className="button button--ghost" to="/customers/add"><UserPlus size={16} /> Add new</Link>
               </div>

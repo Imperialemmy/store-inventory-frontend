@@ -130,7 +130,6 @@ const SaleDetail = () => {
         <div className="invoice-billto">
           <span className="customer-stat__label">Bill to</span>
           <strong>{sale.customer_name}</strong>
-          <span style={{ color: "var(--ink-600)", textTransform: "capitalize" }}>{sale.customer_type} customer</span>
         </div>
 
         <table className="glass-table invoice-table">

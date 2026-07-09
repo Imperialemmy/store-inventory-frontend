@@ -47,14 +47,12 @@ const CustomerDetail = () => {
   if (loading) return <div className="page-container"><p style={{ color: "var(--ink-600)" }}>Loading…</p></div>;
   if (!customer) return <div className="page-container"><div className="surface empty-state"><strong>Customer not found.</strong></div></div>;
 
-  const overLimit = Number(customer.available_credit) < 0;
-
   return (
     <div className="page-container">
       <PageHeader
         eyebrow="Customer directory"
         title={customer.name}
-        description={`${customer.customer_type_display} customer${customer.city ? ` · ${customer.city}` : ""}`}
+        description={customer.city ? `Customer · ${customer.city}` : "Customer"}
         action={
           userRole.canSell ? (
             <div className="page-actions">
@@ -65,32 +63,11 @@ const CustomerDetail = () => {
         }
       />
 
-      {/* Credit summary */}
-      <section className="customer-stats">
-        <div className="surface customer-stat">
-          <span className="customer-stat__label">Outstanding balance</span>
-          <strong className="customer-stat__value" style={{ color: Number(customer.outstanding_balance) > 0 ? "var(--tomato-500)" : "var(--leaf-650)" }}>
-            {formatNaira(customer.outstanding_balance)}
-          </strong>
-        </div>
-        <div className="surface customer-stat">
-          <span className="customer-stat__label">Credit limit</span>
-          <strong className="customer-stat__value">{formatNaira(customer.credit_limit)}</strong>
-        </div>
-        <div className="surface customer-stat">
-          <span className="customer-stat__label">Available credit</span>
-          <strong className="customer-stat__value" style={{ color: overLimit ? "var(--tomato-500)" : "var(--leaf-650)" }}>
-            {formatNaira(customer.available_credit)}
-          </strong>
-        </div>
-      </section>
-
       <div className="customer-detail-grid">
         {/* Profile */}
         <section className="surface form-card">
           <h3 style={{ marginTop: 0, color: "var(--leaf-950)" }}>Profile</h3>
           <dl className="customer-dl">
-            <div><dt>Type</dt><dd>{customer.customer_type_display}</dd></div>
             <div><dt>Phone</dt><dd>{customer.phone_number || "—"}</dd></div>
             <div><dt>Email</dt><dd>{customer.email || "—"}</dd></div>
             <div><dt>City</dt><dd>{customer.city || "—"}</dd></div>
