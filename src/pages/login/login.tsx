@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Leaf, Shield, Store } from "lucide-react";
 import styles from "./login.module.css";
 import useLogin from "./useLogin";
+import ThemeToggle from "../../components/ThemeToggle";
 
 const Login = () => {
   const [params] = useSearchParams();
@@ -20,6 +21,7 @@ const Login = () => {
 
   return (
     <main className={styles.authPage}>
+      <div className={styles.themeToggle}><ThemeToggle className="button button--ghost button--small" /></div>
       <section className={styles.authHero} aria-label="AkinFolu Foods">
         <div className={styles.heroBrand}>
           <span className={styles.heroLogo}><Leaf size={22} /></span>

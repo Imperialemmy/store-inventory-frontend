@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Menu, Search, Bell, AlertTriangle, Clock, PackageX } from "lucide-react";
 import api from "../../services/api";
 import { useUserRole } from "../../hooks/useUserRole";
+import ThemeToggle from "../../components/ThemeToggle";
 
 interface TopBarProps {
   onMenu: () => void;
@@ -68,6 +69,8 @@ const TopBar = ({ onMenu }: TopBarProps) => {
       </form>
 
       <div className="topbar__spacer" />
+
+      <ThemeToggle />
 
       <div className="topbar__bell-wrap" ref={panelRef}>
         <button
