@@ -72,12 +72,21 @@ const ProductsPage = () => {
     setOpen(true);
   };
 
+  // Case-insensitive duplicate check against the products already loaded,
+  // so we warn before hitting the API (the backend enforces it too).
+  const duplicate = useMemo(() => {
+    const name = draft.name.trim().toLowerCase();
+    if (!name) return false;
+    return products.some((p) => p.id !== draft.id && p.name.trim().toLowerCase() === name);
+  }, [products, draft.name, draft.id]);
+
   const save = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
     if (!draft.name.trim()) return setError("Name is required.");
+    if (duplicate) return setError("A product with this name already exists.");
     const data = new FormData();
-    data.append("name", draft.name);
+    data.append("name", draft.name.trim());
     data.append("price", draft.price || "0");
     data.append("stock", draft.stock || "0");
     if (image) data.append("image", image);
@@ -140,6 +149,7 @@ const ProductsPage = () => {
               <label className="field">
                 <span>Name</span>
                 <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} autoFocus placeholder="e.g. Gino Paste - Carton" />
+                {duplicate && <small style={{ color: "var(--danger)", fontWeight: 600 }}>A product with this name already exists.</small>}
               </label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <label className="field">
@@ -161,7 +171,7 @@ const ProductsPage = () => {
                     <Trash2 size={15} /> Delete
                   </button>
                 ) : <span />}
-                <button className="button button--primary button--small" type="submit" disabled={saving}>
+                <button className="button button--primary button--small" type="submit" disabled={saving || duplicate}>
                   {saving ? "Saving…" : draft.id ? "Save" : "Add product"}
                 </button>
               </div>
