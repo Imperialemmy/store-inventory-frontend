@@ -1,10 +1,12 @@
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import { Link } from "react-router-dom";
-import { Leaf } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Leaf, Shield, Store } from "lucide-react";
 import styles from "./login.module.css";
 import useLogin from "./useLogin";
 
 const Login = () => {
+  const [params] = useSearchParams();
+  const pending = params.get("pending") === "1";
   const {
     username,
     password,
@@ -35,6 +37,12 @@ const Login = () => {
           <p className={styles.authEyebrow}>Store access</p>
           <h2>Welcome back</h2>
           <p className={styles.authIntro}>Sign in to open today’s desk.</p>
+
+          {pending && (
+            <p className={styles.authError} style={{ color: "#15532f", background: "#e6f3ea", borderColor: "#c4e2ce" }} role="status">
+              Account created. An admin needs to approve it before you can sign in.
+            </p>
+          )}
 
           <form className={styles.authForm} onSubmit={handleLogin}>
             {error && <p className={styles.authError} role="alert">{error}</p>}
@@ -72,8 +80,20 @@ const Login = () => {
             <button type="submit" className={styles.submitButton}>Login</button>
           </form>
 
-          <div className={styles.authLinks}>
-            <span>New to the team? <Link to="/signup">Sign up</Link></span>
+          <div className={styles.signupChoice}>
+            <span className={styles.signupChoice__label}>New to the team? Sign up as</span>
+            <div className={styles.signupChoice__cards}>
+              <Link to="/signup?role=seller" className={styles.roleCard}>
+                <Store size={18} />
+                <strong>Seller</strong>
+                <small>Ring up sales · needs approval</small>
+              </Link>
+              <Link to="/signup?role=admin" className={styles.roleCard}>
+                <Shield size={18} />
+                <strong>Admin</strong>
+                <small>Full access · needs admin code</small>
+              </Link>
+            </div>
           </div>
         </div>
       </section>

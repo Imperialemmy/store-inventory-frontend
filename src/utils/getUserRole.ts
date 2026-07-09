@@ -1,9 +1,9 @@
 import { jwtDecode } from 'jwt-decode';
 import { isTokenValid } from './auth';
 
-export type Role = 'admin' | 'manager' | 'sales' | 'warehouse' | 'user';
+export type Role = 'admin' | 'seller' | 'user';
 
-const ROLES: Role[] = ['admin', 'manager', 'sales', 'warehouse', 'user'];
+const ROLES: Role[] = ['admin', 'seller', 'user'];
 
 interface JwtPayload {
   user_id: number;

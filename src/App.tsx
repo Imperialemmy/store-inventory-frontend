@@ -10,6 +10,7 @@ import CustomerStatement from './pages/customer/customer_details/CustomerStateme
 import SalesList from './pages/sales/view_sales/SalesList';
 import PointOfSale from './pages/sales/pos/PointOfSale';
 import SaleDetail from './pages/sales/sale_details/SaleDetail';
+import TeamPage from './pages/team/TeamPage';
 import Login from './pages/login/login';
 import SignupPage from './pages/signup/SignupPage';
 
@@ -33,13 +34,16 @@ const App = () => {
 
             <Route path="/products" element={<ProductsPage />} />
 
+            {/* Customers — sellers and admins (backend enforces write access) */}
             <Route path="/customers" element={<CustomerList />} />
+            <Route path="/customers/add" element={<CustomerForm />} />
             <Route path="/customers/:customerId" element={<CustomerDetail />} />
+            <Route path="/customers/:customerId/edit" element={<CustomerForm />} />
             <Route path="/customers/:customerId/statement" element={<CustomerStatement />} />
 
+            {/* Admin-only */}
             <Route element={<AdminRoute />}>
-              <Route path="/customers/add" element={<CustomerForm />} />
-              <Route path="/customers/:customerId/edit" element={<CustomerForm />} />
+              <Route path="/team" element={<TeamPage />} />
             </Route>
           </Route>
         </Route>

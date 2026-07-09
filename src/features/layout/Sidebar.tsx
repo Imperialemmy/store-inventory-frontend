@@ -1,12 +1,14 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { LogOut, Leaf, ShoppingCart, Boxes, Users } from "lucide-react";
+import { LogOut, Leaf, ShoppingCart, Boxes, Users, ShieldCheck } from "lucide-react";
 import { sidebarNavigation, activeGroupKey, type NavGroup } from "../../config/navigation";
 import { clearSession } from "../../utils/auth";
+import { useUserRole } from "../../hooks/useUserRole";
 
 const icons = {
   sales: ShoppingCart,
   inventory: Boxes,
   customers: Users,
+  team: ShieldCheck,
 };
 
 interface SidebarProps {
@@ -17,7 +19,9 @@ interface SidebarProps {
 const Sidebar = ({ open, onNavigate }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAdmin } = useUserRole();
   const activeKey = activeGroupKey(location.pathname);
+  const items = sidebarNavigation.filter((group) => !group.adminOnly || isAdmin);
 
   const handleLogout = () => {
     clearSession();
@@ -47,7 +51,7 @@ const Sidebar = ({ open, onNavigate }: SidebarProps) => {
       </NavLink>
 
       <nav className="sidebar__nav" aria-label="Main navigation">
-        {sidebarNavigation.map(renderItem)}
+        {items.map(renderItem)}
       </nav>
 
       <div className="sidebar__spacer" />

@@ -23,11 +23,9 @@ export const useUserRole = () => {
     role,
     username: getUsername(),
     isAdmin: role === "admin",
-    /** Catalog/config/expense management: admins and managers. */
-    canManage: role === "admin" || role === "manager",
-    /** Stock operations (batches): admins, managers and warehouse staff. */
-    canStock: role === "admin" || role === "manager" || role === "warehouse",
-    /** Customer/sales creation: admins, managers and sales staff. */
-    canSell: role === "admin" || role === "manager" || role === "sales",
+    /** Manage products (inventory) — admin only. */
+    canManage: role === "admin",
+    /** Make sales and manage customers — admins and sellers. */
+    canSell: role === "admin" || role === "seller",
   };
 };
