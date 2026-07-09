@@ -133,6 +133,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .combo__item { display: block; width: 100%; text-align: left; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-900); cursor: pointer; font-size: .93rem; }
 .combo__item:hover, .combo__item--active { background: var(--hover); }
 .combo__empty { padding: 10px 12px; color: var(--ink-600); font-size: .88rem; }
+.pos-walkin { margin-top: 9px; padding: 0; border: 0; background: none; color: var(--brand); font-weight: 700; font-size: .82rem; cursor: pointer; text-align: left; }
+.pos-walkin:hover { text-decoration: underline; }
 .topbar__bell-wrap { position: relative; }
 .topbar__bell { position: relative; border: 0; background: transparent; color: var(--ink-700); cursor: pointer; padding: 8px; border-radius: 10px; }
 .topbar__bell:hover { background: var(--hover); }

@@ -56,6 +56,16 @@ const PointOfSale = () => {
     setCustomerOpen(false);
   };
 
+  const selectWalkIn = async () => {
+    setError(null);
+    try {
+      const res = await api.get<CustomerOption>("/customers/walk-in/");
+      selectCustomer(res.data);
+    } catch {
+      setError("Could not start a walk-in sale. Try again.");
+    }
+  };
+
   const filtered = useMemo(() => {
     const q = productQuery.trim().toLowerCase();
     const list = q ? products.filter((p) => p.name.toLowerCase().includes(q)) : products;
@@ -151,6 +161,9 @@ const PointOfSale = () => {
                 </div>
                 <Link className="button button--ghost" to="/customers/add"><UserPlus size={16} /> Add new</Link>
               </div>
+              <button type="button" className="pos-walkin" onClick={selectWalkIn}>
+                No details — ring up a walk-in sale
+              </button>
             </div>
             <label className="field">
               <span>Products</span>
