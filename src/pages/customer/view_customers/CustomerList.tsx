@@ -4,7 +4,7 @@ import { Search, Plus } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import { useUserRole } from "../../../hooks/useUserRole";
-import { type Customer, formatNaira } from "../customerTypes";
+import { type Customer } from "../customerTypes";
 
 const CustomerList = () => {
   const navigate = useNavigate();
@@ -56,11 +56,10 @@ const CustomerList = () => {
                 <div className="inventory-list__content">
                   <div className="inventory-list__name">
                     <span>{c.name}</span>
-                    <span className="customer-chip">{c.customer_type_display}</span>
+                    {c.city && <span className="customer-chip">{c.city}</span>}
                   </div>
-                  <span className="inventory-list__open"
-                        style={{ color: Number(c.outstanding_balance) > 0 ? "var(--danger)" : "var(--brand)" }}>
-                    {Number(c.outstanding_balance) > 0 ? `Owes ${formatNaira(c.outstanding_balance)}` : "Settled"}
+                  <span className="inventory-list__open" style={{ color: "var(--ink-600)" }}>
+                    {c.phone_number || "View"}
                   </span>
                 </div>
               </li>

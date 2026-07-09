@@ -36,6 +36,7 @@ const CustomerStatement = () => {
   const ordered = [...sales].sort((a, b) => a.date.localeCompare(b.date));
   const totalBilled = ordered.reduce((sum, s) => sum + Number(s.total), 0);
   const totalPaid = ordered.reduce((sum, s) => sum + Number(s.amount_paid), 0);
+  const outstanding = ordered.reduce((sum, s) => sum + Number(s.balance), 0);
 
   return (
     <div className="page-container">
@@ -59,7 +60,6 @@ const CustomerStatement = () => {
           </div>
           <div className="invoice-meta">
             <div><span>Customer</span><strong>{customer.name}</strong></div>
-            <div><span>Type</span><strong style={{ textTransform: "capitalize" }}>{customer.customer_type}</strong></div>
             <div><span>As of</span><strong>{new Date().toISOString().slice(0, 10)}</strong></div>
           </div>
         </header>
@@ -93,7 +93,7 @@ const CustomerStatement = () => {
         <dl className="sale-totals invoice-totals">
           <div><dt>Total billed</dt><dd>{formatNaira(totalBilled)}</dd></div>
           <div><dt>Total paid</dt><dd>{formatNaira(totalPaid)}</dd></div>
-          <div className="sale-totals__grand"><dt>Outstanding</dt><dd>{formatNaira(customer.outstanding_balance)}</dd></div>
+          <div className="sale-totals__grand"><dt>Outstanding</dt><dd>{formatNaira(outstanding)}</dd></div>
         </dl>
         <p className="invoice-foot">Thank you for your business.</p>
       </section>

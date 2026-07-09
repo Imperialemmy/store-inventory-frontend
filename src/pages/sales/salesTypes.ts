@@ -32,7 +32,6 @@ export interface Sale {
   invoice_number: string;
   customer: number;
   customer_name: string;
-  customer_type: string;
   salesperson: string | null;
   date: string;
   discount: string;

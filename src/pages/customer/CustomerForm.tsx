@@ -5,13 +5,10 @@ import PageHeader from "../../components/ui/PageHeader";
 
 interface FormState {
   name: string;
-  customer_type: "wholesale" | "retail";
   phone_number: string;
   email: string;
   city: string;
   address: string;
-  credit_limit: string;
-  outstanding_balance: string;
   tags: string;
   notes: string;
   is_active: boolean;
@@ -19,13 +16,10 @@ interface FormState {
 
 const emptyForm: FormState = {
   name: "",
-  customer_type: "retail",
   phone_number: "",
   email: "",
   city: "",
   address: "",
-  credit_limit: "0",
-  outstanding_balance: "0",
   tags: "",
   notes: "",
   is_active: true,
@@ -46,13 +40,10 @@ const CustomerForm = () => {
       const c = res.data;
       setForm({
         name: c.name ?? "",
-        customer_type: c.customer_type,
         phone_number: c.phone_number ?? "",
         email: c.email ?? "",
         city: c.city ?? "",
         address: c.address ?? "",
-        credit_limit: String(c.credit_limit ?? "0"),
-        outstanding_balance: String(c.outstanding_balance ?? "0"),
         tags: (c.tags ?? []).map((t: { name: string }) => t.name).join(", "),
         notes: c.notes ?? "",
         is_active: c.is_active,
@@ -70,13 +61,10 @@ const CustomerForm = () => {
 
     const payload = {
       name: form.name,
-      customer_type: form.customer_type,
       phone_number: form.phone_number || null,
       email: form.email || null,
       city: form.city || null,
       address: form.address || null,
-      credit_limit: form.credit_limit || "0",
-      outstanding_balance: form.outstanding_balance || "0",
       notes: form.notes || null,
       is_active: form.is_active,
       tag_names: form.tags
@@ -103,7 +91,7 @@ const CustomerForm = () => {
       <PageHeader
         eyebrow="Customer directory"
         title={isEdit ? "Edit customer" : "New customer"}
-        description="Capture who they are, how to reach them, and their credit terms."
+        description="Capture who they are and how to reach them."
       />
 
       <form className="surface form-card" onSubmit={handleSubmit}>
@@ -113,14 +101,6 @@ const CustomerForm = () => {
           <label className="field">
             <span>Customer name</span>
             <input value={form.name} onChange={(e) => set("name", e.target.value)} required placeholder="e.g. Mama Tobi Stores" />
-          </label>
-
-          <label className="field">
-            <span>Customer type</span>
-            <select value={form.customer_type} onChange={(e) => set("customer_type", e.target.value as FormState["customer_type"])}>
-              <option value="retail">Retail</option>
-              <option value="wholesale">Wholesale</option>
-            </select>
           </label>
 
           <label className="field">
@@ -141,16 +121,6 @@ const CustomerForm = () => {
           <label className="field">
             <span>Address</span>
             <textarea rows={2} value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Street address" />
-          </label>
-
-          <label className="field">
-            <span>Credit limit (₦)</span>
-            <input type="number" min="0" step="0.01" value={form.credit_limit} onChange={(e) => set("credit_limit", e.target.value)} />
-          </label>
-
-          <label className="field">
-            <span>Outstanding balance (₦)</span>
-            <input type="number" min="0" step="0.01" value={form.outstanding_balance} onChange={(e) => set("outstanding_balance", e.target.value)} />
           </label>
 
           <label className="field">

@@ -6,15 +6,10 @@ export interface CustomerTag {
 export interface Customer {
   id: number;
   name: string;
-  customer_type: "wholesale" | "retail";
-  customer_type_display: string;
   phone_number: string | null;
   email: string | null;
   address: string | null;
   city: string | null;
-  credit_limit: string;
-  outstanding_balance: string;
-  available_credit: string;
   tags: CustomerTag[];
   notes: string | null;
   is_active: boolean;
