@@ -26,7 +26,17 @@ const useLogin = () => {
 
       navigate("/sales");
     } catch (err) {
-       console.error(err);
+      console.error(err);
+      // Distinguish "awaiting approval" from a wrong password.
+      try {
+        const status = await api.post("/auth/account-status/", { username });
+        if (status.data?.pending) {
+          setError("This account is still awaiting admin approval. You’ll be able to sign in once an admin approves it.");
+          return;
+        }
+      } catch {
+        /* fall through to the generic message */
+      }
       setError("Login failed. Check your username and password.");
     }
   };
