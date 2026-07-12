@@ -9,13 +9,17 @@ interface Product {
   name: string;
   image: string | null;
   price: string;
+  cost_price: string | null;
   stock: number;
+  reorder_level: number;
 }
 
 const naira = (n: string | number) =>
   new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(n));
 
-const emptyDraft = { id: 0, name: "", price: "", stock: "" };
+const emptyDraft = {
+  id: 0, name: "", price: "", costPrice: "", stock: "", reorderLevel: "5",
+};
 
 const ProductsPage = () => {
   const { canManage } = useUserRole();
@@ -66,7 +70,14 @@ const ProductsPage = () => {
   };
   const openEdit = (p: Product) => {
     if (!canManage) return;
-    setDraft({ id: p.id, name: p.name, price: String(p.price), stock: String(p.stock) });
+    setDraft({
+      id: p.id,
+      name: p.name,
+      price: String(p.price),
+      costPrice: p.cost_price ? String(p.cost_price) : "",
+      stock: String(p.stock),
+      reorderLevel: String(p.reorder_level ?? 5),
+    });
     setImage(null);
     setError(null);
     setOpen(true);
@@ -110,7 +121,9 @@ const ProductsPage = () => {
     const data = new FormData();
     data.append("name", draft.name.trim());
     data.append("price", draft.price || "0");
+    if (draft.costPrice) data.append("cost_price", draft.costPrice);
     data.append("stock", draft.stock || "0");
+    data.append("reorder_level", draft.reorderLevel || "5");
     if (image) data.append("image", image);
 
     setSaving(true);
@@ -180,12 +193,20 @@ const ProductsPage = () => {
               </label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <label className="field">
-                  <span>Price (₦)</span>
+                  <span>Selling price (₦)</span>
                   <input type="number" min="0" step="0.01" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} />
+                </label>
+                <label className="field">
+                  <span>Cost price (₦)</span>
+                  <input type="number" min="0" step="0.01" value={draft.costPrice} onChange={(e) => setDraft({ ...draft, costPrice: e.target.value })} placeholder="Optional" />
                 </label>
                 <label className="field">
                   <span>Stock</span>
                   <input type="number" min="0" value={draft.stock} onChange={(e) => setDraft({ ...draft, stock: e.target.value })} />
+                </label>
+                <label className="field">
+                  <span>Low-stock alert at</span>
+                  <input type="number" min="0" value={draft.reorderLevel} onChange={(e) => setDraft({ ...draft, reorderLevel: e.target.value })} />
                 </label>
               </div>
               <label className="field">
@@ -230,7 +251,9 @@ const ProductsPage = () => {
                     <span>{p.name}</span>
                   </div>
                   <span style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                    <span style={{ color: "var(--ink-600)", fontSize: ".82rem" }}>Stock {p.stock}</span>
+                    <span style={{ color: p.stock <= p.reorder_level ? "var(--danger)" : "var(--ink-600)", fontSize: ".82rem", fontWeight: p.stock <= p.reorder_level ? 750 : 400 }}>
+                      Stock {p.stock}{p.stock <= p.reorder_level ? " · low" : ""}
+                    </span>
                     <strong style={{ color: "var(--ink-900)" }}>{naira(p.price)}</strong>
                   </span>
                 </div>

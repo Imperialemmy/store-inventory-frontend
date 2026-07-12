@@ -1,228 +1,423 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Search, ShoppingCart, Plus, Minus, UserPlus, Package, ChevronDown } from "lucide-react";
+import {
+  Search, ShoppingCart, Plus, Minus, UserPlus, Package,
+  ChevronDown, X, CheckCircle2,
+} from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import { formatNaira } from "../salesTypes";
+import { createUuid, getDeviceId, offlineDb } from "../../../offline/db";
+import { syncPendingSales } from "../../../offline/sync";
+import type {
+  CachedCustomer,
+  CachedProduct,
+  CartLine,
+  QueuedSale,
+} from "../../../offline/types";
 
-interface CustomerOption { id: number; name: string; }
-interface Product {
-  id: number;
-  name: string;
-  image: string | null;
-  price: string;
-  stock: number;
-}
-interface CartLine { product: Product; quantity: number; }
-
-const VAT_RATE = 7.5;
+const DEFAULT_VAT_RATE = Number(import.meta.env.VITE_DEFAULT_VAT_RATE ?? 7.5);
+const WALK_IN_NAME = "Walk-in Customer";
 
 const PointOfSale = () => {
-  const navigate = useNavigate();
-  const [customers, setCustomers] = useState<CustomerOption[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<CachedCustomer[]>([]);
+  const [products, setProducts] = useState<CachedProduct[]>([]);
   const [customerId, setCustomerId] = useState<number | "">("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [customerOpen, setCustomerOpen] = useState(false);
   const [productQuery, setProductQuery] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer" | "pos" | "pay_later">("cash");
+  const [vatRate, setVatRate] = useState(DEFAULT_VAT_RATE);
+  const [productUsage, setProductUsage] = useState<Record<number, number>>({});
+  const [hydrated, setHydrated] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [addingCustomer, setAddingCustomer] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState("");
   const comboRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    api.get("/customers/?page_size=1000").then((r) => setCustomers(r.data.results || r.data));
-    api.get("/products/").then((r) => setProducts(r.data.results || r.data));
+    let active = true;
+    const hydrate = async () => {
+      const [cachedProducts, cachedCustomers, draft, usage] = await Promise.all([
+        offlineDb.products.all(),
+        offlineDb.customers.all(),
+        offlineDb.cart.get(),
+        offlineDb.meta.get<Record<number, number>>("productUsage"),
+      ]);
+      if (!active) return;
+      setProducts(cachedProducts);
+      setCustomers(cachedCustomers);
+      setProductUsage(usage?.value ?? {});
+      if (draft) {
+        setCart(draft.lines);
+        setCustomerId(draft.customerId);
+        setCustomerSearch(draft.customerName);
+        setPaymentMethod(draft.paymentMethod);
+      } else {
+        const walkIn = cachedCustomers.find((c) => c.name === WALK_IN_NAME);
+        if (walkIn) {
+          setCustomerId(walkIn.id);
+          setCustomerSearch(walkIn.name);
+        }
+      }
+      setHydrated(true);
+
+      try {
+        const [productResponse, customerResponse, healthResponse] = await Promise.all([
+          api.get("/products/"),
+          api.get("/customers/?page_size=1000"),
+          api.get("/health/"),
+        ]);
+        setVatRate(Number(healthResponse.data.default_vat_rate ?? DEFAULT_VAT_RATE));
+        const freshProducts = productResponse.data.results || productResponse.data;
+        let freshCustomers: CachedCustomer[] = customerResponse.data.results || customerResponse.data;
+        let walkIn = freshCustomers.find((c) => c.name === WALK_IN_NAME);
+        if (!walkIn) {
+          const response = await api.get<CachedCustomer>("/customers/walk-in/");
+          walkIn = response.data;
+          freshCustomers = [...freshCustomers, walkIn];
+        }
+        await Promise.all([
+          offlineDb.products.replace(freshProducts),
+          offlineDb.customers.replace(freshCustomers),
+        ]);
+        if (!active) return;
+        setProducts(freshProducts);
+        setCustomers(freshCustomers);
+        if (!draft?.customerId && walkIn) {
+          setCustomerId(walkIn.id);
+          setCustomerSearch(walkIn.name);
+        }
+      } catch {
+        // Cached catalogue remains fully usable. Connectivity is represented
+        // by the global sync strip rather than a blocking POS error.
+      }
+    };
+    void hydrate();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
+    void offlineDb.cart.put({
+      key: "active",
+      customerId,
+      customerName: customerSearch,
+      lines: cart,
+      paymentMethod,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [cart, customerId, customerSearch, paymentMethod, hydrated]);
+
+  useEffect(() => {
     if (!customerOpen) return;
-    const close = (e: MouseEvent) => {
-      if (comboRef.current && !comboRef.current.contains(e.target as Node)) setCustomerOpen(false);
+    const close = (event: MouseEvent) => {
+      if (comboRef.current && !comboRef.current.contains(event.target as Node)) {
+        setCustomerOpen(false);
+      }
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [customerOpen]);
 
   const customerMatches = useMemo(() => {
-    const q = customerSearch.trim().toLowerCase();
-    const list = q ? customers.filter((c) => c.name.toLowerCase().includes(q)) : customers;
+    const query = customerSearch.trim().toLowerCase();
+    const list = query
+      ? customers.filter((customer) => customer.name.toLowerCase().includes(query))
+      : customers;
     return [...list].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 8);
   }, [customers, customerSearch]);
 
-  const selectCustomer = (c: CustomerOption) => {
-    setCustomerId(c.id);
-    setCustomerSearch(c.name);
+  const selectCustomer = (customer: CachedCustomer) => {
+    setCustomerId(customer.id);
+    setCustomerSearch(customer.name);
     setCustomerOpen(false);
   };
 
-  const selectWalkIn = async () => {
+  const filtered = useMemo(() => {
+    const query = productQuery.trim().toLowerCase();
+    const list = query
+      ? products.filter((product) => product.name.toLowerCase().includes(query))
+      : products;
+    return [...list]
+      .sort((a, b) => (productUsage[b.id] ?? 0) - (productUsage[a.id] ?? 0) || a.name.localeCompare(b.name))
+      .slice(0, 18);
+  }, [products, productQuery, productUsage]);
+
+  const addToCart = (product: CachedProduct) => {
+    setSuccess(null);
+    setCart((previous) => {
+      const existing = previous.find((line) => line.product.id === product.id);
+      if (existing) {
+        if (existing.quantity >= product.stock) return previous;
+        return previous.map((line) => line.product.id === product.id
+          ? { ...line, quantity: line.quantity + 1 }
+          : line);
+      }
+      return [...previous, { product, quantity: 1 }];
+    });
+  };
+
+  const setQty = (id: number, delta: number) =>
+    setCart((previous) => previous
+      .map((line) => line.product.id === id
+        ? { ...line, quantity: Math.min(line.product.stock, line.quantity + delta) }
+        : line)
+      .filter((line) => line.quantity > 0));
+
+  const subtotalKobo = cart.reduce(
+    (sum, line) => sum + Math.round(Number(line.product.price) * 100) * line.quantity,
+    0,
+  );
+  const vatKobo = Math.round((subtotalKobo * vatRate) / 100);
+  const subtotal = subtotalKobo / 100;
+  const vat = vatKobo / 100;
+  const total = (subtotalKobo + vatKobo) / 100;
+  const itemCount = cart.reduce((sum, line) => sum + line.quantity, 0);
+  const customer = customers.find((item) => item.id === customerId);
+
+  const addCustomer = async () => {
+    const name = newCustomerName.trim();
+    if (!name) return;
     setError(null);
     try {
-      const res = await api.get<CustomerOption>("/customers/walk-in/");
-      selectCustomer(res.data);
+      const response = await api.post<CachedCustomer>("/customers/", { name });
+      await offlineDb.customers.put(response.data);
+      setCustomers((previous) => [...previous, response.data]);
+      selectCustomer(response.data);
+      setAddingCustomer(false);
+      setNewCustomerName("");
     } catch {
-      setError("Could not start a walk-in sale. Try again.");
+      setError("A named customer needs internet right now. Use Walk-in Customer and the sale will still be safe.");
     }
   };
 
-  const filtered = useMemo(() => {
-    const q = productQuery.trim().toLowerCase();
-    const list = q ? products.filter((p) => p.name.toLowerCase().includes(q)) : products;
-    return [...list].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 12);
-  }, [products, productQuery]);
-
-  const customer = customers.find((c) => c.id === customerId);
-
-  const addToCart = (p: Product) => {
-    setCart((prev) => {
-      const existing = prev.find((l) => l.product.id === p.id);
-      if (existing) return prev.map((l) => (l.product.id === p.id ? { ...l, quantity: l.quantity + 1 } : l));
-      return [...prev, { product: p, quantity: 1 }];
-    });
-  };
-  const setQty = (id: number, delta: number) =>
-    setCart((prev) => prev.map((l) => (l.product.id === id ? { ...l, quantity: l.quantity + delta } : l)).filter((l) => l.quantity > 0));
-
-  const subtotal = cart.reduce((s, l) => s + Number(l.product.price) * l.quantity, 0);
-  const vat = (subtotal * VAT_RATE) / 100;
-  const total = subtotal + vat;
-  const itemCount = cart.reduce((s, l) => s + l.quantity, 0);
-
   const completeSale = async () => {
     setError(null);
-    if (!customerId) return setError("Select a customer first.");
+    setSuccess(null);
+    if (!customerId || !customer) return setError("Choose Walk-in Customer or a named customer.");
     if (cart.length === 0) return setError("Add at least one product.");
     setSaving(true);
     try {
-      const res = await api.post("/sales/", {
-        customer: customerId,
-        vat_rate: VAT_RATE,
+      const timestamp = new Date().toISOString();
+      const id = createUuid();
+      const localReference = `LOCAL-${timestamp.slice(0, 10).replace(/-/g, "")}-${id.slice(0, 6).toUpperCase()}`;
+      const queuedSale: QueuedSale = {
+        client_sale_id: id,
+        local_reference: localReference,
+        customer: customer.id,
+        customer_name: customer.name,
+        sold_at: timestamp,
+        queued_at: timestamp,
+        device_id: getDeviceId(),
+        offline_created: true,
+        vat_rate: vatRate,
         discount: "0",
-        items: cart.map((l) => ({ product: l.product.id, quantity: l.quantity, unit_price: l.product.price })),
+        items: cart.map((line) => ({
+          product: line.product.id,
+          product_name: line.product.name,
+          quantity: line.quantity,
+          unit_price: line.product.price,
+        })),
+        ...(paymentMethod === "pay_later" ? {} : {
+          initial_payment: {
+            amount: total.toFixed(2),
+            method: paymentMethod,
+          },
+        }),
+        total,
+        state: "pending",
+        retry_count: 0,
+      };
+      await offlineDb.sales.put(queuedSale);
+      const nextUsage = { ...productUsage };
+      cart.forEach((line) => {
+        nextUsage[line.product.id] = (nextUsage[line.product.id] ?? 0) + line.quantity;
       });
-      navigate(`/sales/${res.data.id}`);
-    } catch (err: unknown) {
-      const detail = (err as { response?: { data?: unknown } })?.response?.data;
-      setError(Array.isArray(detail) ? String(detail[0]) : "Could not complete the sale. Check stock and try again.");
+      await offlineDb.meta.put("productUsage", nextUsage);
+      await offlineDb.cart.clear();
+      setProductUsage(nextUsage);
+      setCart([]);
+      setProductQuery("");
+      setCartOpen(false);
+      setSuccess(`${localReference} is saved safely on this device.`);
+      void syncPendingSales();
+    } catch {
+      setError("This device could not save the sale. Keep this screen open and try again.");
+    } finally {
       setSaving(false);
     }
   };
 
+  const cartPanel = (
+    <div className="surface form-card pos__cart">
+      <div className="pos-cart-head">
+        <h3>Cart</h3>
+        <button type="button" className="pos-cart-close" onClick={() => setCartOpen(false)} aria-label="Close cart">
+          <X size={20} />
+        </button>
+      </div>
+      {cart.length === 0 ? (
+        <p className="muted">Tap a product to add it.</p>
+      ) : (
+        <>
+          {cart.map((line) => (
+            <div className="pos-cart-row" key={line.product.id}>
+              <div>
+                <div className="pos-cart-row__name">{line.product.name}</div>
+                <div className="pos-cart-row__meta">{formatNaira(line.product.price)} each</div>
+              </div>
+              <div className="pos-qty">
+                <button type="button" onClick={() => setQty(line.product.id, -1)} aria-label={`Decrease ${line.product.name}`}><Minus size={17} /></button>
+                <span>{line.quantity}</span>
+                <button type="button" onClick={() => setQty(line.product.id, 1)} aria-label={`Increase ${line.product.name}`} disabled={line.quantity >= line.product.stock}><Plus size={17} /></button>
+              </div>
+            </div>
+          ))}
+          <fieldset className="payment-choice">
+            <legend>Payment</legend>
+            {[
+              ["cash", "Cash"],
+              ["transfer", "Transfer"],
+              ["pos", "POS"],
+              ["pay_later", "Pay later"],
+            ].map(([value, label]) => (
+              <label key={value} className={paymentMethod === value ? "payment-choice__active" : ""}>
+                <input
+                  type="radio"
+                  name="payment"
+                  value={value}
+                  checked={paymentMethod === value}
+                  onChange={() => setPaymentMethod(value as typeof paymentMethod)}
+                />
+                <span>{label}</span>
+              </label>
+            ))}
+          </fieldset>
+          <dl className="sale-totals" style={{ maxWidth: "none" }}>
+            <div><dt>Subtotal</dt><dd>{formatNaira(subtotal)}</dd></div>
+            <div><dt>VAT ({vatRate}%)</dt><dd>{formatNaira(vat)}</dd></div>
+            <div className="sale-totals__grand">
+              <dt>{itemCount} item{itemCount === 1 ? "" : "s"} · {customer?.name}</dt>
+              <dd>{formatNaira(total)}</dd>
+            </div>
+          </dl>
+        </>
+      )}
+      <button className="button button--primary pos-record" onClick={completeSale} disabled={saving || cart.length === 0}>
+        <ShoppingCart size={18} />
+        {saving ? "Saving on this device…" : `Record sale · ${formatNaira(total)}`}
+      </button>
+    </div>
+  );
+
   return (
-    <div className="page-container">
-      <PageHeader eyebrow="Point of sale" title="New sale" description="Add products to the cart and complete the sale." />
+    <div className="page-container pos-page">
+      <PageHeader eyebrow="Point of sale" title="New sale" description="Every sale is saved on this device first." />
 
       {error && <div className="notice notice--error" role="alert">{error}</div>}
+      {success && (
+        <div className="notice notice--success pos-success" role="status">
+          <CheckCircle2 size={18} />
+          <span><strong>Sale recorded.</strong> {success}</span>
+        </div>
+      )}
 
       <div className="pos">
         <div>
-          <div className="surface form-card" style={{ marginBottom: "16px" }}>
-            <div className="field" style={{ marginBottom: "14px" }}>
+          <div className="surface form-card pos-controls">
+            <div className="field">
               <span>Customer</span>
-              <div style={{ display: "flex", gap: "10px" }}>
-                <div className="combo" ref={comboRef} style={{ flex: 1 }}>
-                  <div className="topbar__search" style={{ maxWidth: "none" }}>
+              <div className="pos-customer-row">
+                <div className="combo" ref={comboRef}>
+                  <div className="topbar__search">
                     <Search size={18} />
                     <input
                       value={customerSearch}
-                      onChange={(e) => { setCustomerSearch(e.target.value); setCustomerId(""); setCustomerOpen(true); }}
-                      onFocus={() => setCustomerOpen(true)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Escape") setCustomerOpen(false);
-                        if (e.key === "Enter" && customerMatches.length) { e.preventDefault(); selectCustomer(customerMatches[0]); }
+                      onChange={(event) => {
+                        setCustomerSearch(event.target.value);
+                        setCustomerId("");
+                        setCustomerOpen(true);
                       }}
-                      placeholder="Search customer…"
+                      onFocus={() => setCustomerOpen(true)}
+                      placeholder="Walk-in Customer"
                       aria-label="Search customer"
+                      role="combobox"
+                      aria-expanded={customerOpen}
                     />
-                    <button type="button" className="combo__toggle" onClick={() => setCustomerOpen((o) => !o)} aria-label="Show customers">
+                    <button type="button" className="combo__toggle" onClick={() => setCustomerOpen((open) => !open)} aria-label="Show customers">
                       <ChevronDown size={18} />
                     </button>
                   </div>
                   {customerOpen && (
-                    <ul className="combo__menu">
-                      {customerMatches.length === 0 ? (
-                        <li className="combo__empty">No customers found.</li>
-                      ) : (
-                        customerMatches.map((c) => (
-                          <li key={c.id}>
-                            <button
-                              type="button"
-                              className={`combo__item${c.id === customerId ? " combo__item--active" : ""}`}
-                              onClick={() => selectCustomer(c)}
-                            >
-                              {c.name}
-                            </button>
-                          </li>
-                        ))
-                      )}
+                    <ul className="combo__menu" role="listbox">
+                      {customerMatches.map((item) => (
+                        <li key={item.id}>
+                          <button type="button" className="combo__item" onClick={() => selectCustomer(item)}>
+                            {item.name}
+                          </button>
+                        </li>
+                      ))}
                     </ul>
                   )}
                 </div>
-                <Link className="button button--ghost" to="/customers/add"><UserPlus size={16} /> Add new</Link>
+                <button className="button button--ghost pos-add-customer" type="button" onClick={() => setAddingCustomer((open) => !open)}>
+                  <UserPlus size={17} /> Add customer
+                </button>
               </div>
-              <button type="button" className="pos-walkin" onClick={selectWalkIn}>
-                No details — ring up a walk-in sale
-              </button>
+              {addingCustomer && (
+                <div className="inline-customer">
+                  <input value={newCustomerName} onChange={(event) => setNewCustomerName(event.target.value)} placeholder="Customer name" autoFocus />
+                  <button type="button" className="button button--primary button--small" onClick={() => void addCustomer()}>Save customer</button>
+                </div>
+              )}
             </div>
             <label className="field">
               <span>Products</span>
-              <div className="topbar__search" style={{ maxWidth: "none" }}>
+              <div className="topbar__search">
                 <Search size={18} />
-                <input value={productQuery} onChange={(e) => setProductQuery(e.target.value)} placeholder="Search products…" />
+                <input value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Search products…" />
               </div>
             </label>
           </div>
 
-          <div className="pos-products">
-            {filtered.map((p) => (
-              <button key={p.id} className="pos-product" onClick={() => addToCart(p)} type="button" disabled={p.stock <= 0}>
-                {p.image ? (
-                  <img src={p.image} alt="" style={{ width: "100%", height: 80, objectFit: "contain", marginBottom: 8 }} />
-                ) : (
-                  <span style={{ display: "grid", placeItems: "center", height: 80, marginBottom: 8, color: "var(--brand)" }}><Package size={28} /></span>
-                )}
-                <span className="pos-product__name">{p.name}</span>
-                <span className="pos-product__meta">stock {p.stock}</span>
-                <span className="pos-product__price">{formatNaira(p.price)}</span>
-              </button>
-            ))}
-            {filtered.length === 0 && <p style={{ color: "var(--ink-600)" }}>No products found.</p>}
-          </div>
+          {!hydrated ? (
+            <p className="muted">Opening saved products…</p>
+          ) : (
+            <div className="pos-products">
+              {filtered.map((product) => (
+                <button key={product.id} className="pos-product" onClick={() => addToCart(product)} type="button" disabled={product.stock <= 0}>
+                  {product.image ? (
+                    <img src={product.image} alt="" />
+                  ) : (
+                    <span className="pos-product__placeholder"><Package size={28} /></span>
+                  )}
+                  <span className="pos-product__name">{product.name}</span>
+                  <span className="pos-product__meta">Stock {product.stock}</span>
+                  <span className="pos-product__price">{formatNaira(product.price)}</span>
+                </button>
+              ))}
+              {filtered.length === 0 && <p className="muted">No saved products match this search.</p>}
+            </div>
+          )}
         </div>
 
-        {/* Cart */}
-        <div className="surface form-card pos__cart">
-          <h3 style={{ marginTop: 0, color: "var(--ink-900)" }}>Cart</h3>
-          {cart.length === 0 ? (
-            <p style={{ color: "var(--ink-600)" }}>Tap a product to add it.</p>
-          ) : (
-            <>
-              {cart.map((l) => (
-                <div className="pos-cart-row" key={l.product.id}>
-                  <div>
-                    <div className="pos-cart-row__name">{l.product.name}</div>
-                    <div className="pos-cart-row__meta">{formatNaira(l.product.price)} each</div>
-                  </div>
-                  <div className="pos-qty">
-                    <button type="button" onClick={() => setQty(l.product.id, -1)} aria-label="Decrease"><Minus size={13} /></button>
-                    <span>{l.quantity}</span>
-                    <button type="button" onClick={() => setQty(l.product.id, 1)} aria-label="Increase" disabled={l.quantity >= l.product.stock}><Plus size={13} /></button>
-                  </div>
-                </div>
-              ))}
-              <dl className="sale-totals" style={{ maxWidth: "none" }}>
-                <div><dt>Subtotal</dt><dd>{formatNaira(subtotal)}</dd></div>
-                <div><dt>VAT ({VAT_RATE}%)</dt><dd>{formatNaira(vat)}</dd></div>
-                <div className="sale-totals__grand"><dt>{itemCount} item{itemCount === 1 ? "" : "s"}{customer ? ` · ${customer.name}` : ""}</dt><dd>{formatNaira(total)}</dd></div>
-              </dl>
-            </>
-          )}
-          <button className="button button--primary" style={{ width: "100%", marginTop: "16px" }} onClick={completeSale} disabled={saving}>
-            <ShoppingCart size={17} /> {saving ? "Completing…" : "Complete sale"}
-          </button>
+        <div className={`pos-cart-shell${cartOpen ? " pos-cart-shell--open" : ""}`}>
+          <button type="button" className="pos-cart-backdrop" onClick={() => setCartOpen(false)} aria-label="Close cart" />
+          {cartPanel}
         </div>
       </div>
+
+      {cart.length > 0 && (
+        <button type="button" className="mobile-cart-bar" onClick={() => setCartOpen(true)}>
+          <span><ShoppingCart size={18} /> {itemCount} item{itemCount === 1 ? "" : "s"}</span>
+          <strong>{formatNaira(total)}</strong>
+          <small>Review sale</small>
+        </button>
+      )}
     </div>
   );
 };

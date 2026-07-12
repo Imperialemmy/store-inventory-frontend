@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import { sidebarNavigation, activeGroupKey, activeSubTo } from "../../config/navigation";
+import SyncStatus from "../../offline/SyncStatus";
 
 const AppShell = () => {
   const location = useLocation();
@@ -20,6 +21,7 @@ const AppShell = () => {
 
       <div className="app-main">
         <TopBar onMenu={() => setMenuOpen(true)} />
+        <SyncStatus />
 
         {subItems && subItems.length > 1 && (
           <nav className="subnav" aria-label={`${activeGroup?.label} sections`}>

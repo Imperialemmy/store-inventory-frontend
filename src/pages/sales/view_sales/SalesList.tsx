@@ -4,6 +4,18 @@ import { Search } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import { type Sale, formatNaira, statusLabel } from "../salesTypes";
+import { offlineDb } from "../../../offline/db";
+import { SYNC_EVENT } from "../../../offline/sync";
+import type { QueuedSale } from "../../../offline/types";
+
+interface OperationsSummary {
+  sales_total: string;
+  sale_count: number;
+  payments: { cash: string; transfer: string; pos: string };
+  low_stock_count: number;
+  inventory_attention_count: number;
+  outstanding_total: string;
+}
 
 const statusColor: Record<string, string> = {
   paid: "var(--brand)",
@@ -16,12 +28,30 @@ const SalesList = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [localSales, setLocalSales] = useState<QueuedSale[]>([]);
+  const [summary, setSummary] = useState<OperationsSummary | null>(null);
 
   useEffect(() => {
     api.get("/sales/?page_size=200")
       .then((res) => setSales(res.data.results || res.data))
       .catch((err) => console.error("Error fetching sales:", err))
       .finally(() => setLoading(false));
+    api.get("/operations-summary/")
+      .then((res) => setSummary(res.data))
+      .catch(() => setSummary(null));
+  }, []);
+
+  useEffect(() => {
+    const loadLocal = () => {
+      void offlineDb.sales.all().then((sales) => setLocalSales(
+        sales
+          .filter((sale) => sale.state !== "synced")
+          .sort((a, b) => b.queued_at.localeCompare(a.queued_at))
+      ));
+    };
+    loadLocal();
+    window.addEventListener(SYNC_EVENT, loadLocal);
+    return () => window.removeEventListener(SYNC_EVENT, loadLocal);
   }, []);
 
   const visible = useMemo(() => {
@@ -33,6 +63,33 @@ const SalesList = () => {
   return (
     <div className="page-container">
       <PageHeader eyebrow="Invoices" title="Invoices" description="Every sale, its total and outstanding balance." />
+
+      {summary && (
+        <section className="ops-summary" aria-label="Today's business summary">
+          <div><span>Today</span><strong>{formatNaira(summary.sales_total)}</strong><small>{summary.sale_count} sale{summary.sale_count === 1 ? "" : "s"}</small></div>
+          <div><span>Cash</span><strong>{formatNaira(summary.payments.cash)}</strong><small>Transfer {formatNaira(summary.payments.transfer)} · POS {formatNaira(summary.payments.pos)}</small></div>
+          <div><span>Stock attention</span><strong>{summary.low_stock_count + summary.inventory_attention_count}</strong><small>{summary.low_stock_count} low · {summary.inventory_attention_count} conflicts</small></div>
+          <div><span>Customers owe</span><strong>{formatNaira(summary.outstanding_total)}</strong><small>Across unpaid invoices</small></div>
+        </section>
+      )}
+
+      {localSales.length > 0 && (
+        <section className="surface local-sales">
+          <header><strong>Safely saved on this device</strong><span>{localSales.length}</span></header>
+          {localSales.map((sale) => (
+            <div key={sale.client_sale_id}>
+              <span>
+                <strong>{sale.local_reference}</strong>
+                <small>{sale.customer_name} · {new Date(sale.sold_at).toLocaleString()}</small>
+              </span>
+              <span className={`local-sale-state local-sale-state--${sale.state}`}>
+                {sale.state === "needs_attention" ? "Needs attention" : sale.state === "syncing" ? "Syncing" : "Waiting to sync"}
+              </span>
+              <strong>{formatNaira(sale.total)}</strong>
+            </div>
+          ))}
+        </section>
+      )}
 
       <section className="surface list-surface">
         <div className="search-box" style={{ gridTemplateColumns: "auto 1fr auto" }}>

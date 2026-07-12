@@ -23,6 +23,7 @@ const useLogin = () => {
       const data = res.data;
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
+      window.dispatchEvent(new CustomEvent("akinfolu-auth-change"));
 
       navigate("/sales");
     } catch (err) {

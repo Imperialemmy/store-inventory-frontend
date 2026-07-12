@@ -1,0 +1,17 @@
+{
+  "name": "AkinFolu Foods",
+  "short_name": "AkinFolu",
+  "description": "Offline-first sales and stock for AkinFolu Foods",
+  "start_url": "/sales",
+  "display": "standalone",
+  "background_color": "#eef4fb",
+  "theme_color": "#1c6cb0",
+  "icons": [
+    {
+      "src": "/tab_logo/akf.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
