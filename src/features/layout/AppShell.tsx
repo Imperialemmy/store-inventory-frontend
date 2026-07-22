@@ -4,6 +4,7 @@ import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import { sidebarNavigation, activeGroupKey, activeSubTo } from "../../config/navigation";
 import SyncStatus from "../../offline/SyncStatus";
+import GlobalLoadingBar from "../../components/GlobalLoadingBar";
 
 const AppShell = () => {
   const location = useLocation();
@@ -16,6 +17,7 @@ const AppShell = () => {
 
   return (
     <div className="app-shell">
+      <GlobalLoadingBar />
       {menuOpen && <div className="sidebar-backdrop" onClick={() => setMenuOpen(false)} />}
       <Sidebar open={menuOpen} onNavigate={() => setMenuOpen(false)} />
 
