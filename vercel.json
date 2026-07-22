@@ -6,7 +6,7 @@
       "destination": "http://157.230.229.31/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/:path((?!backend/).*)",
       "destination": "/index.html"
     }
   ]
