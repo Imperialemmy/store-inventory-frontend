@@ -11,10 +11,24 @@ const empty: SyncSnapshot = {
   needsAttention: 0,
 };
 
+// Always Nigerian time, whatever the device's own timezone is set to.
+const lagosTime = new Intl.DateTimeFormat("en-NG", {
+  timeZone: "Africa/Lagos", hour: "2-digit", minute: "2-digit", hour12: true,
+});
+const lagosDate = new Intl.DateTimeFormat("en-NG", {
+  timeZone: "Africa/Lagos", weekday: "short", day: "numeric", month: "short", year: "numeric",
+});
+
 const SyncStatus = () => {
   const [snapshot, setSnapshot] = useState(empty);
   const [details, setDetails] = useState(false);
   const [attention, setAttention] = useState<QueuedSale[]>([]);
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const tick = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(tick);
+  }, []);
 
   const refresh = async () => {
     setSnapshot(await getSyncSnapshot());
@@ -60,6 +74,9 @@ const SyncStatus = () => {
       <button type="button" className={className} onClick={() => setDetails((value) => !value)} aria-expanded={details}>
         <Icon size={16} className={snapshot.syncing ? "sync-strip__spin" : ""} />
         <span>{message}</span>
+        <span className="sync-strip__clock" aria-label="Current Nigerian time and date">
+          {lagosTime.format(now)} · {lagosDate.format(now)}
+        </span>
         {(queued > 0 || snapshot.needsAttention > 0) && <small>View details</small>}
       </button>
       {details && attention.length > 0 && (

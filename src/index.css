@@ -122,6 +122,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
   color: var(--ink-700); background: var(--brand-soft); font-size: .82rem; font-weight: 750;
 }
 .sync-strip small { margin-left: 6px; color: inherit; font-weight: 600; text-decoration: underline; }
+.sync-strip__clock { padding-left: 10px; border-left: 1px solid currentColor; opacity: .78; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 560px) { .sync-strip__clock { display: none; } }
 .sync-strip--offline { background: var(--amber-soft); color: #735612; }
 .sync-strip--attention { background: var(--danger-soft); color: var(--danger); }
 .sync-strip--syncing { color: var(--brand-strong); }
