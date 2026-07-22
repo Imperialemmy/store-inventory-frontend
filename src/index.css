@@ -122,6 +122,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
   color: var(--ink-700); background: var(--brand-soft); font-size: .82rem; font-weight: 750;
 }
 .sync-strip small { margin-left: 6px; color: inherit; font-weight: 600; text-decoration: underline; }
+.sync-strip__clock { padding-left: 10px; border-left: 1px solid currentColor; opacity: .78; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 560px) { .sync-strip__clock { display: none; } }
 .sync-strip--offline { background: var(--amber-soft); color: #735612; }
 .sync-strip--attention { background: var(--danger-soft); color: var(--danger); }
 .sync-strip--syncing { color: var(--brand-strong); }
@@ -152,8 +154,20 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .combo__item { display: block; width: 100%; text-align: left; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-900); cursor: pointer; font-size: .93rem; }
 .combo__item:hover, .combo__item--active { background: var(--hover); }
 .combo__empty { padding: 10px 12px; color: var(--ink-600); font-size: .88rem; }
-.pos-walkin { margin-top: 9px; padding: 0; border: 0; background: none; color: var(--brand); font-weight: 700; font-size: .82rem; cursor: pointer; text-align: left; }
-.pos-walkin:hover { text-decoration: underline; }
+/* POS search bars: same anatomy as the top-bar search but squared off. */
+.pos-search { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--input-bg); color: var(--ink-600); transition: opacity .25s ease, background .25s ease, border-color .25s ease; }
+.pos-search input { flex: 1; border: 0; outline: 0; background: transparent; color: var(--ink-900); min-width: 0; }
+
+/* Ticking "Walk-in customer" locks the search field with a soft fade. */
+.combo--locked .pos-search { opacity: .45; background: var(--hover); border-style: dashed; }
+.combo--locked input, .combo--locked .combo__toggle { cursor: not-allowed; }
+
+.pos-walkin-check { margin-top: 9px; display: inline-flex; align-items: center; gap: 8px; color: var(--ink-700); font-size: .84rem; font-weight: 650; cursor: pointer; user-select: none; }
+.pos-walkin-check input { width: 16px; height: 16px; accent-color: var(--brand); cursor: pointer; }
+.pos-walkin-check small { color: var(--ink-600); font-weight: 500; }
+
+.payment-choice__hint { grid-column: 1 / -1; margin: 2px 0 0; color: var(--ink-600); font-size: .78rem; }
+.payment-choice label.payment-choice__disabled { opacity: .45; cursor: not-allowed; }
 .topbar__bell-wrap { position: relative; }
 .topbar__bell { position: relative; border: 0; background: transparent; color: var(--ink-700); cursor: pointer; padding: 8px; border-radius: 10px; }
 .topbar__bell:hover { background: var(--hover); }
@@ -330,7 +344,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .pos__cart { position: sticky; top: 92px; }
 .pos-controls { margin-bottom: 16px; display: grid; gap: 14px; }
 .pos-customer-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
-.pos-customer-row .combo, .pos-customer-row .topbar__search, .pos-controls .topbar__search { max-width: none; }
+.pos-customer-row .combo, .pos-customer-row .pos-search, .pos-controls .pos-search { max-width: none; }
 .inline-customer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px; border-radius: 10px; background: var(--brand-soft); }
 .inline-customer input { min-height: 42px; padding: 9px 12px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface); color: var(--ink-900); }
 .pos-products { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }

@@ -16,7 +16,7 @@
   justify-content: space-between;
   padding: clamp(32px, 5vw, 64px);
   color: #fff;
-  background: linear-gradient(160deg, rgba(15,52,88,.92), rgba(23,74,127,.72)), url('/login/testx.jpg') center/cover;
+  background: #15568f;
 }
 .heroBrand { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
 .heroLogo { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,.16); }
@@ -51,6 +51,9 @@
 .submitButton:hover { background: var(--brand-strong); }
 .submitButton:active { transform: translateY(1px); }
 .authError { margin: 0; padding: 11px 13px; border: 1px solid #f0c8ba; border-radius: 10px; color: #8a3421; background: var(--danger-soft); font-size: .86rem; }
+.authSuccess { margin: 0 0 16px; padding: 11px 13px; border: 1px solid #c2d9ee; border-radius: 10px; color: #15568f; background: #e4eff9; font-size: .86rem; }
+.forgotLink { justify-self: center; margin-top: 2px; color: var(--ink-600); font-size: .84rem; text-decoration: none; }
+.forgotLink:hover { color: var(--brand); text-decoration: underline; }
 .authLinks { margin-top: 22px; display: flex; justify-content: center; gap: 8px; color: var(--ink-600); font-size: .88rem; }
 .authLinks a { color: var(--brand); font-weight: 700; text-decoration: none; }
 .authLinks a:hover { text-decoration: underline; }

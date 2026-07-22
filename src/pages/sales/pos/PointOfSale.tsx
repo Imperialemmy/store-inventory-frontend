@@ -15,7 +15,8 @@ import type {
   QueuedSale,
 } from "../../../offline/types";
 
-const DEFAULT_VAT_RATE = Number(import.meta.env.VITE_DEFAULT_VAT_RATE ?? 7.5);
+// Prices are final at this store — no VAT or extra fees on top.
+const DEFAULT_VAT_RATE = Number(import.meta.env.VITE_DEFAULT_VAT_RATE ?? 0);
 const WALK_IN_NAME = "Walk-in Customer";
 
 const PointOfSale = () => {
@@ -23,6 +24,7 @@ const PointOfSale = () => {
   const [products, setProducts] = useState<CachedProduct[]>([]);
   const [customerId, setCustomerId] = useState<number | "">("");
   const [customerSearch, setCustomerSearch] = useState("");
+  const [walkIn, setWalkIn] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const [productQuery, setProductQuery] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -54,14 +56,9 @@ const PointOfSale = () => {
       if (draft) {
         setCart(draft.lines);
         setCustomerId(draft.customerId);
-        setCustomerSearch(draft.customerName);
+        setCustomerSearch(draft.customerName === WALK_IN_NAME ? "" : draft.customerName);
+        setWalkIn(draft.customerName === WALK_IN_NAME);
         setPaymentMethod(draft.paymentMethod);
-      } else {
-        const walkIn = cachedCustomers.find((c) => c.name === WALK_IN_NAME);
-        if (walkIn) {
-          setCustomerId(walkIn.id);
-          setCustomerSearch(walkIn.name);
-        }
       }
       setHydrated(true);
 
@@ -87,10 +84,6 @@ const PointOfSale = () => {
         if (!active) return;
         setProducts(freshProducts);
         setCustomers(freshCustomers);
-        if (!draft?.customerId && walkIn) {
-          setCustomerId(walkIn.id);
-          setCustomerSearch(walkIn.name);
-        }
       } catch {
         // Cached catalogue remains fully usable. Connectivity is represented
         // by the global sync strip rather than a blocking POS error.
@@ -105,12 +98,12 @@ const PointOfSale = () => {
     void offlineDb.cart.put({
       key: "active",
       customerId,
-      customerName: customerSearch,
+      customerName: walkIn ? WALK_IN_NAME : customerSearch,
       lines: cart,
       paymentMethod,
       updatedAt: new Date().toISOString(),
     });
-  }, [cart, customerId, customerSearch, paymentMethod, hydrated]);
+  }, [cart, customerId, customerSearch, walkIn, paymentMethod, hydrated]);
 
   useEffect(() => {
     if (!customerOpen) return;
@@ -123,18 +116,51 @@ const PointOfSale = () => {
     return () => document.removeEventListener("mousedown", close);
   }, [customerOpen]);
 
+  // The walk-in record is represented by its own checkbox, so it never
+  // appears among the named customers.
+  const namedCustomers = useMemo(
+    () => customers.filter((customer) => customer.name !== WALK_IN_NAME),
+    [customers],
+  );
+
   const customerMatches = useMemo(() => {
     const query = customerSearch.trim().toLowerCase();
     const list = query
-      ? customers.filter((customer) => customer.name.toLowerCase().includes(query))
-      : customers;
+      ? namedCustomers.filter((customer) => customer.name.toLowerCase().includes(query))
+      : namedCustomers;
     return [...list].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 8);
-  }, [customers, customerSearch]);
+  }, [namedCustomers, customerSearch]);
 
   const selectCustomer = (customer: CachedCustomer) => {
     setCustomerId(customer.id);
     setCustomerSearch(customer.name);
     setCustomerOpen(false);
+  };
+
+  const toggleWalkIn = async (checked: boolean) => {
+    setWalkIn(checked);
+    setCustomerOpen(false);
+    if (!checked) {
+      setCustomerId("");
+      setCustomerSearch("");
+      return;
+    }
+    setCustomerSearch("");
+    if (paymentMethod === "pay_later") setPaymentMethod("cash");
+    let record = customers.find((customer) => customer.name === WALK_IN_NAME);
+    if (!record) {
+      try {
+        const response = await api.get<CachedCustomer>("/customers/walk-in/");
+        record = response.data;
+        await offlineDb.customers.put(record);
+        setCustomers((previous) => [...previous, record as CachedCustomer]);
+      } catch {
+        setWalkIn(false);
+        setError("Walk-in needs one first online visit to set up. Check your connection and try again.");
+        return;
+      }
+    }
+    setCustomerId(record.id);
   };
 
   const filtered = useMemo(() => {
@@ -198,7 +224,7 @@ const PointOfSale = () => {
   const completeSale = async () => {
     setError(null);
     setSuccess(null);
-    if (!customerId || !customer) return setError("Choose Walk-in Customer or a named customer.");
+    if (!customerId || !customer) return setError("Pick a customer, or tick Walk-in customer.");
     if (cart.length === 0) return setError("Add at least one product.");
     setSaving(true);
     try {
@@ -284,22 +310,31 @@ const PointOfSale = () => {
               ["transfer", "Transfer"],
               ["pos", "POS"],
               ["pay_later", "Pay later"],
-            ].map(([value, label]) => (
-              <label key={value} className={paymentMethod === value ? "payment-choice__active" : ""}>
-                <input
-                  type="radio"
-                  name="payment"
-                  value={value}
-                  checked={paymentMethod === value}
-                  onChange={() => setPaymentMethod(value as typeof paymentMethod)}
-                />
-                <span>{label}</span>
-              </label>
-            ))}
+            ].map(([value, label]) => {
+              const disabled = value === "pay_later" && walkIn;
+              return (
+                <label key={value} className={paymentMethod === value ? "payment-choice__active" : disabled ? "payment-choice__disabled" : ""}>
+                  <input
+                    type="radio"
+                    name="payment"
+                    value={value}
+                    checked={paymentMethod === value}
+                    disabled={disabled}
+                    onChange={() => setPaymentMethod(value as typeof paymentMethod)}
+                  />
+                  <span>{label}</span>
+                </label>
+              );
+            })}
+            {walkIn && <p className="payment-choice__hint">Walk-in sales are paid in full — pick a named customer to sell on credit.</p>}
           </fieldset>
           <dl className="sale-totals" style={{ maxWidth: "none" }}>
-            <div><dt>Subtotal</dt><dd>{formatNaira(subtotal)}</dd></div>
-            <div><dt>VAT ({vatRate}%)</dt><dd>{formatNaira(vat)}</dd></div>
+            {vatRate > 0 && (
+              <>
+                <div><dt>Subtotal</dt><dd>{formatNaira(subtotal)}</dd></div>
+                <div><dt>VAT ({vatRate}%)</dt><dd>{formatNaira(vat)}</dd></div>
+              </>
+            )}
             <div className="sale-totals__grand">
               <dt>{itemCount} item{itemCount === 1 ? "" : "s"} · {customer?.name}</dt>
               <dd>{formatNaira(total)}</dd>
@@ -332,8 +367,8 @@ const PointOfSale = () => {
             <div className="field">
               <span>Customer</span>
               <div className="pos-customer-row">
-                <div className="combo" ref={comboRef}>
-                  <div className="topbar__search">
+                <div className={`combo${walkIn ? " combo--locked" : ""}`} ref={comboRef}>
+                  <div className="pos-search">
                     <Search size={18} />
                     <input
                       value={customerSearch}
@@ -343,31 +378,46 @@ const PointOfSale = () => {
                         setCustomerOpen(true);
                       }}
                       onFocus={() => setCustomerOpen(true)}
-                      placeholder="Walk-in Customer"
+                      placeholder="Search customer…"
                       aria-label="Search customer"
                       role="combobox"
                       aria-expanded={customerOpen}
+                      disabled={walkIn}
                     />
-                    <button type="button" className="combo__toggle" onClick={() => setCustomerOpen((open) => !open)} aria-label="Show customers">
+                    <button type="button" className="combo__toggle" onClick={() => setCustomerOpen((open) => !open)} aria-label="Show customers" disabled={walkIn}>
                       <ChevronDown size={18} />
                     </button>
                   </div>
-                  {customerOpen && (
+                  {customerOpen && !walkIn && (
                     <ul className="combo__menu" role="listbox">
-                      {customerMatches.map((item) => (
-                        <li key={item.id}>
-                          <button type="button" className="combo__item" onClick={() => selectCustomer(item)}>
-                            {item.name}
-                          </button>
+                      {customerMatches.length === 0 ? (
+                        <li className="combo__empty">
+                          {namedCustomers.length === 0 ? "No customers added yet." : "No customers found."}
                         </li>
-                      ))}
+                      ) : (
+                        customerMatches.map((item) => (
+                          <li key={item.id}>
+                            <button type="button" className="combo__item" onClick={() => selectCustomer(item)}>
+                              {item.name}
+                            </button>
+                          </li>
+                        ))
+                      )}
                     </ul>
                   )}
                 </div>
-                <button className="button button--ghost pos-add-customer" type="button" onClick={() => setAddingCustomer((open) => !open)}>
+                <button className="button button--ghost pos-add-customer" type="button" onClick={() => setAddingCustomer((open) => !open)} disabled={walkIn}>
                   <UserPlus size={17} /> Add customer
                 </button>
               </div>
+              <label className="pos-walkin-check">
+                <input
+                  type="checkbox"
+                  checked={walkIn}
+                  onChange={(event) => void toggleWalkIn(event.target.checked)}
+                />
+                <span>Walk-in customer <small>(no details needed)</small></span>
+              </label>
               {addingCustomer && (
                 <div className="inline-customer">
                   <input value={newCustomerName} onChange={(event) => setNewCustomerName(event.target.value)} placeholder="Customer name" autoFocus />
@@ -377,7 +427,7 @@ const PointOfSale = () => {
             </div>
             <label className="field">
               <span>Products</span>
-              <div className="topbar__search">
+              <div className="pos-search">
                 <Search size={18} />
                 <input value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Search products…" />
               </div>

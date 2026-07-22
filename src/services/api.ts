@@ -42,6 +42,15 @@ api.interceptors.response.use(
     const request = error.config as RetryableRequest | undefined;
     const refreshToken = localStorage.getItem("refresh_token");
 
+    // This account logged in somewhere else — the backend rejected our
+    // session outright, so refreshing won't help. Sign out with a reason.
+    if (error.response?.status === 401 && error.response.data?.code === "session_replaced") {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      if (window.location.pathname !== "/login") window.location.assign("/login?reason=session-replaced");
+      return Promise.reject(error);
+    }
+
     if (error.response?.status !== 401 || !request || request._retry || !refreshToken) {
       return Promise.reject(error);
     }
