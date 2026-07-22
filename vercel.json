@@ -2,11 +2,11 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
-      "source": "/backend/:path*",
-      "destination": "https://157-230-229-31.sslip.io/api/v1/:path*"
+      "source": "/backend/(.*)",
+      "destination": "https://157-230-229-31.sslip.io/api/v1/$1"
     },
     {
-      "source": "/:path((?!backend/).*)",
+      "source": "/((?!backend/).*)",
       "destination": "/index.html"
     }
   ]
