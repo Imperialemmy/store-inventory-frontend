@@ -8,6 +8,8 @@ import ThemeToggle from "../../components/ThemeToggle";
 const Login = () => {
   const [params] = useSearchParams();
   const pending = params.get("pending") === "1";
+  const sessionReplaced = params.get("reason") === "session-replaced";
+  const passwordReset = params.get("reset") === "1";
   const {
     username,
     password,
@@ -41,8 +43,18 @@ const Login = () => {
           <p className={styles.authIntro}>Sign in to open today’s desk.</p>
 
           {pending && (
-            <p className={styles.authError} style={{ color: "#15532f", background: "#e6f3ea", borderColor: "#c4e2ce" }} role="status">
+            <p className={styles.authSuccess} role="status">
               Account created. An admin needs to approve it before you can sign in.
+            </p>
+          )}
+          {passwordReset && (
+            <p className={styles.authSuccess} role="status">
+              Password changed. Sign in with your new password.
+            </p>
+          )}
+          {sessionReplaced && (
+            <p className={styles.authError} role="status">
+              You were signed out because this account signed in on another device.
             </p>
           )}
 
@@ -80,6 +92,7 @@ const Login = () => {
             </label>
 
             <button type="submit" className={styles.submitButton}>Login</button>
+            <Link to="/forgot-password" className={styles.forgotLink}>Forgot password?</Link>
           </form>
 
           <div className={styles.signupChoice}>

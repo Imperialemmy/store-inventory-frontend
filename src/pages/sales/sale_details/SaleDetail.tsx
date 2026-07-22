@@ -155,8 +155,8 @@ const SaleDetail = () => {
 
         <dl className="sale-totals invoice-totals">
           <div><dt>Subtotal</dt><dd>{formatNaira(sale.subtotal)}</dd></div>
-          <div><dt>Discount</dt><dd>− {formatNaira(sale.discount)}</dd></div>
-          <div><dt>VAT ({sale.vat_rate}%)</dt><dd>{formatNaira(sale.vat_amount)}</dd></div>
+          {Number(sale.discount) > 0 && <div><dt>Discount</dt><dd>− {formatNaira(sale.discount)}</dd></div>}
+          {Number(sale.vat_amount) > 0 && <div><dt>VAT ({sale.vat_rate}%)</dt><dd>{formatNaira(sale.vat_amount)}</dd></div>}
           <div className="sale-totals__grand"><dt>Total</dt><dd>{formatNaira(sale.total)}</dd></div>
           <div><dt>Paid</dt><dd>{formatNaira(sale.amount_paid)}</dd></div>
           {Number(sale.amount_credited) > 0 && (

@@ -12,6 +12,8 @@ import PointOfSale from './pages/sales/pos/PointOfSale';
 import SaleDetail from './pages/sales/sale_details/SaleDetail';
 import TeamPage from './pages/team/TeamPage';
 import Login from './pages/login/login';
+import ForgotPassword from './pages/login/ForgotPassword';
+import ResetPassword from './pages/login/ResetPassword';
 import SignupPage from './pages/signup/SignupPage';
 
 const App = () => {
@@ -22,6 +24,8 @@ const App = () => {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
 
         {/* Protected routes */}
         <Route element={<ProtectedLayout />}>
