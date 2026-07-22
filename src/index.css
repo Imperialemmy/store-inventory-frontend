@@ -162,8 +162,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .combo--locked .pos-search { opacity: .45; background: var(--hover); border-style: dashed; }
 .combo--locked input, .combo--locked .combo__toggle { cursor: not-allowed; }
 
-.pos-walkin-check { margin-top: 9px; display: inline-flex; align-items: center; gap: 8px; color: var(--ink-700); font-size: .84rem; font-weight: 650; cursor: pointer; user-select: none; }
-.pos-walkin-check input { width: 16px; height: 16px; accent-color: var(--brand); cursor: pointer; }
+.pos-walkin-check { margin-top: 11px; display: flex; width: fit-content; align-items: center; gap: 8px; color: var(--ink-700); font-size: .84rem; font-weight: 650; cursor: pointer; user-select: none; }
+/* Scoped above the global `.field input` rule so the checkbox stays a small
+   box instead of stretching to full width. */
+.field .pos-walkin-check input[type="checkbox"] {
+  flex: 0 0 auto; width: 17px; height: 17px; min-width: 0; margin: 0; padding: 0;
+  border: 1px solid var(--line-strong); border-radius: 5px; background: var(--input-bg);
+  accent-color: var(--brand); cursor: pointer; appearance: auto; -webkit-appearance: checkbox;
+}
+.pos-walkin-check span { white-space: nowrap; }
 .pos-walkin-check small { color: var(--ink-600); font-weight: 500; }
 
 .payment-choice__hint { grid-column: 1 / -1; margin: 2px 0 0; color: var(--ink-600); font-size: .78rem; }
