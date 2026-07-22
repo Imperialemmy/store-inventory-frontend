@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/backend/:path*",
-      "destination": "http://157.230.229.31/:path*"
+      "destination": "https://157-230-229-31.sslip.io/api/v1/:path*"
     },
     {
       "source": "/:path((?!backend/).*)",
