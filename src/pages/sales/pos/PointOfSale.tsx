@@ -15,8 +15,8 @@ import type {
   QueuedSale,
 } from "../../../offline/types";
 
-// Prices are final at this store — no VAT or extra fees on top.
-const DEFAULT_VAT_RATE = Number(import.meta.env.VITE_DEFAULT_VAT_RATE ?? 0);
+// Prices are final at this store — the total is exactly the item prices,
+// no VAT or extra fees on top.
 const WALK_IN_NAME = "Walk-in Customer";
 
 const PointOfSale = () => {
@@ -29,7 +29,6 @@ const PointOfSale = () => {
   const [productQuery, setProductQuery] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer" | "pos" | "pay_later">("cash");
-  const [vatRate, setVatRate] = useState(DEFAULT_VAT_RATE);
   const [productUsage, setProductUsage] = useState<Record<number, number>>({});
   const [hydrated, setHydrated] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -63,12 +62,10 @@ const PointOfSale = () => {
       setHydrated(true);
 
       try {
-        const [productResponse, customerResponse, healthResponse] = await Promise.all([
+        const [productResponse, customerResponse] = await Promise.all([
           api.get("/products/"),
           api.get("/customers/?page_size=1000"),
-          api.get("/health/"),
         ]);
-        setVatRate(Number(healthResponse.data.default_vat_rate ?? DEFAULT_VAT_RATE));
         const freshProducts = productResponse.data.results || productResponse.data;
         let freshCustomers: CachedCustomer[] = customerResponse.data.results || customerResponse.data;
         let walkIn = freshCustomers.find((c) => c.name === WALK_IN_NAME);
@@ -198,12 +195,10 @@ const PointOfSale = () => {
     (sum, line) => sum + Math.round(Number(line.product.price) * 100) * line.quantity,
     0,
   );
-  const vatKobo = Math.round((subtotalKobo * vatRate) / 100);
-  const subtotal = subtotalKobo / 100;
-  const vat = vatKobo / 100;
-  const total = (subtotalKobo + vatKobo) / 100;
+  const total = subtotalKobo / 100;
   const itemCount = cart.reduce((sum, line) => sum + line.quantity, 0);
   const customer = customers.find((item) => item.id === customerId);
+  const cartQty = (id: number) => cart.find((line) => line.product.id === id)?.quantity ?? 0;
 
   const addCustomer = async () => {
     const name = newCustomerName.trim();
@@ -240,7 +235,7 @@ const PointOfSale = () => {
         queued_at: timestamp,
         device_id: getDeviceId(),
         offline_created: true,
-        vat_rate: vatRate,
+        vat_rate: 0,
         discount: "0",
         items: cart.map((line) => ({
           product: line.product.id,
@@ -329,12 +324,6 @@ const PointOfSale = () => {
             {walkIn && <p className="payment-choice__hint">Walk-in sales are paid in full — pick a named customer to sell on credit.</p>}
           </fieldset>
           <dl className="sale-totals" style={{ maxWidth: "none" }}>
-            {vatRate > 0 && (
-              <>
-                <div><dt>Subtotal</dt><dd>{formatNaira(subtotal)}</dd></div>
-                <div><dt>VAT ({vatRate}%)</dt><dd>{formatNaira(vat)}</dd></div>
-              </>
-            )}
             <div className="sale-totals__grand">
               <dt>{itemCount} item{itemCount === 1 ? "" : "s"} · {customer?.name}</dt>
               <dd>{formatNaira(total)}</dd>
@@ -438,18 +427,22 @@ const PointOfSale = () => {
             <p className="muted">Opening saved products…</p>
           ) : (
             <div className="pos-products">
-              {filtered.map((product) => (
-                <button key={product.id} className="pos-product" onClick={() => addToCart(product)} type="button" disabled={product.stock <= 0}>
-                  {product.image ? (
-                    <img src={product.image} alt="" />
-                  ) : (
-                    <span className="pos-product__placeholder"><Package size={28} /></span>
-                  )}
-                  <span className="pos-product__name">{product.name}</span>
-                  <span className="pos-product__meta">Stock {product.stock}</span>
-                  <span className="pos-product__price">{formatNaira(product.price)}</span>
-                </button>
-              ))}
+              {filtered.map((product) => {
+                const inCart = cartQty(product.id);
+                return (
+                  <button key={product.id} className={`pos-product${inCart > 0 ? " pos-product--selected" : ""}`} onClick={() => addToCart(product)} type="button" disabled={product.stock <= 0}>
+                    {inCart > 0 && <span className="pos-product__count" aria-label={`${inCart} in cart`}>{inCart}</span>}
+                    {product.image ? (
+                      <img src={product.image} alt="" />
+                    ) : (
+                      <span className="pos-product__placeholder"><Package size={28} /></span>
+                    )}
+                    <span className="pos-product__name">{product.name}</span>
+                    <span className="pos-product__meta">Stock {product.stock}</span>
+                    <span className="pos-product__price">{formatNaira(product.price)}</span>
+                  </button>
+                );
+              })}
               {filtered.length === 0 && <p className="muted">No saved products match this search.</p>}
             </div>
           )}

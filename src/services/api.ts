@@ -16,8 +16,19 @@ const api = axios.create({
 
 const isDev = import.meta.env.MODE === "development";
 
+// Broadcast in-flight request count so a global progress bar can show while
+// any action is talking to the server.
+export const API_ACTIVITY_EVENT = "api-activity";
+let activeRequests = 0;
+const emitActivity = () => {
+  window.dispatchEvent(new CustomEvent(API_ACTIVITY_EVENT, { detail: activeRequests }));
+};
+const startActivity = () => { activeRequests += 1; emitActivity(); };
+const endActivity = () => { activeRequests = Math.max(0, activeRequests - 1); emitActivity(); };
+
 api.interceptors.request.use(
   (config) => {
+    startActivity();
     const token = localStorage.getItem("access_token");
 
     if (token) {
@@ -37,8 +48,12 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    endActivity();
+    return response;
+  },
   async (error) => {
+    endActivity();
     const request = error.config as RetryableRequest | undefined;
     const refreshToken = localStorage.getItem("refresh_token");
 

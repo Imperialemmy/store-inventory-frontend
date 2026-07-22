@@ -18,7 +18,7 @@ const naira = (n: string | number) =>
   new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(n));
 
 const emptyDraft = {
-  id: 0, name: "", price: "", costPrice: "", stock: "", reorderLevel: "5",
+  id: 0, name: "", price: "", stock: "", reorderLevel: "5",
 };
 
 const ProductsPage = () => {
@@ -74,7 +74,6 @@ const ProductsPage = () => {
       id: p.id,
       name: p.name,
       price: String(p.price),
-      costPrice: p.cost_price ? String(p.cost_price) : "",
       stock: String(p.stock),
       reorderLevel: String(p.reorder_level ?? 5),
     });
@@ -121,7 +120,6 @@ const ProductsPage = () => {
     const data = new FormData();
     data.append("name", draft.name.trim());
     data.append("price", draft.price || "0");
-    if (draft.costPrice) data.append("cost_price", draft.costPrice);
     data.append("stock", draft.stock || "0");
     data.append("reorder_level", draft.reorderLevel || "5");
     if (image) data.append("image", image);
@@ -193,12 +191,8 @@ const ProductsPage = () => {
               </label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <label className="field">
-                  <span>Selling price (₦)</span>
+                  <span>Price (₦)</span>
                   <input type="number" min="0" step="0.01" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} />
-                </label>
-                <label className="field">
-                  <span>Cost price (₦)</span>
-                  <input type="number" min="0" step="0.01" value={draft.costPrice} onChange={(e) => setDraft({ ...draft, costPrice: e.target.value })} placeholder="Optional" />
                 </label>
                 <label className="field">
                   <span>Stock</span>
