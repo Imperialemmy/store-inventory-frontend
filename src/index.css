@@ -367,7 +367,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .pos-product { position: relative; text-align: left; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); padding: 12px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .1s; }
 .pos-product:hover { border-color: var(--brand); box-shadow: var(--shadow-sm); }
 .pos-product--selected { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand) inset; }
-.pos-product__count { position: absolute; right: 8px; bottom: 8px; z-index: 1; min-width: 24px; height: 24px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: var(--brand); color: #fff; font-size: .8rem; font-weight: 800; box-shadow: var(--shadow-sm); }
+.pos-product__check { position: absolute; right: 8px; bottom: 8px; z-index: 1; display: inline-flex; align-items: center; justify-content: center; color: var(--brand); background: var(--surface); border-radius: 999px; box-shadow: var(--shadow-sm); }
 .pos-product:active { transform: translateY(1px); }
 .pos-product__name { display: block; font-weight: 700; color: var(--ink-900); font-size: .9rem; }
 .pos-product__meta { color: var(--ink-600); font-size: .78rem; }
