@@ -441,7 +441,8 @@ const PointOfSale = () => {
             {addingCustomer && (
               <div className="inline-customer">
                 <input value={newCustomerName} onChange={(event) => setNewCustomerName(event.target.value)} placeholder="Customer name" autoFocus />
-                <button type="button" className="button button--primary button--small" onClick={() => void addCustomer()}>Save customer</button>
+                <button type="button" className="button button--primary button--small" onClick={() => void addCustomer()}>Save</button>
+                <button type="button" className="button button--ghost button--small" onClick={() => { setAddingCustomer(false); setNewCustomerName(""); }}>Cancel</button>
               </div>
             )}
 

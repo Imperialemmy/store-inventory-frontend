@@ -108,7 +108,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 }
 .sidebar__brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 20px; text-decoration: none; }
 .sidebar__brand-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--brand); color: #fff; }
-.sidebar__brand-text { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 1.28rem; color: var(--brand-strong); line-height: 1; }
+.sidebar__brand-text { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 1.34rem; color: var(--ink-900); line-height: 1; }
 .sidebar__nav { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
 .sidebar__item {
   display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 12px;
@@ -359,13 +359,13 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 /* POS layout: catalog on the left, a full-height sticky cart on the right. */
 .pos { display: grid; grid-template-columns: 1.5fr .9fr; gap: 18px; align-items: start; }
-.pos__cart { position: sticky; top: 84px; height: calc(100vh - 100px); display: flex; flex-direction: column; }
+.pos__cart { position: sticky; top: 84px; max-height: calc(100vh - 100px); display: flex; flex-direction: column; }
 .pos-controls { margin-bottom: 16px; display: grid; gap: 12px; }
 .pos-customer-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
 .pos-customer-bar .combo { flex: 1 1 220px; min-width: 0; }
 .pos-customer-bar .combo, .pos-customer-bar .pos-search, .pos-controls .pos-search { max-width: none; }
 .pos-add-customer { white-space: nowrap; }
-.inline-customer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px; border-radius: 10px; background: var(--brand-soft); }
+.inline-customer { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; padding: 10px; border-radius: 10px; background: var(--brand-soft); }
 .inline-customer input { min-height: 42px; padding: 9px 12px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface); color: var(--ink-900); }
 
 /* Category quick-filter chips */
@@ -377,22 +377,23 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 /* High-density product list */
 .pos-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.pos-list-row { width: 100%; display: grid; grid-template-columns: 1fr auto auto 32px; align-items: center; gap: 14px; padding: 11px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow-sm); cursor: pointer; text-align: left; transition: border-color .12s, box-shadow .12s, background .12s; }
+.pos-list-row { width: 100%; display: grid; grid-template-columns: 1fr 104px 120px 28px; align-items: center; gap: 14px; padding: 11px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow-sm); cursor: pointer; text-align: left; transition: border-color .12s, box-shadow .12s, background .12s; }
 .pos-list-row:hover { border-color: var(--brand); }
 .pos-list-row:disabled { opacity: .5; cursor: not-allowed; }
 .pos-list-row--selected { border-color: var(--brand); background: var(--brand-soft); }
 .pos-list-row__main { display: grid; min-width: 0; }
 .pos-list-row__name { font-weight: 700; color: var(--ink-900); font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pos-list-row__cat { color: var(--ink-600); font-size: .72rem; }
-.pos-list-row__stock { font-size: .8rem; font-weight: 650; white-space: nowrap; }
-.pos-list-row__price { color: var(--brand); font-weight: 800; white-space: nowrap; }
-.pos-list-row__pick { display: inline-flex; align-items: center; justify-content: center; color: var(--ink-600); }
+.pos-list-row__stock { font-size: .8rem; font-weight: 650; white-space: nowrap; text-align: right; }
+.pos-list-row__price { color: var(--brand); font-weight: 800; white-space: nowrap; text-align: right; }
+.pos-list-row__pick { display: inline-flex; align-items: center; justify-content: flex-end; color: var(--ink-600); }
 .pos-list-row__pick--on { color: var(--brand); }
 
 /* Cart: scrollable line items, pinned footer with totals + record button. */
 .pos-cart-head { display: flex; align-items: center; justify-content: space-between; }
 .pos-cart-head h3 { margin: 0; color: var(--ink-900); }
-.pos-cart-body { flex: 1; min-height: 0; overflow-y: auto; margin: 8px -4px 0; padding: 0 4px; }
+/* Hug the line items when the cart is small; scroll only once it fills up. */
+.pos-cart-body { flex: 0 1 auto; min-height: 0; overflow-y: auto; margin: 8px -4px 0; padding: 0 4px; }
 .pos-cart-foot { flex: 0 0 auto; padding-top: 8px; }
 .pos-cart-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
 .pos-cart-row__info { min-width: 0; }
@@ -418,7 +419,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 /* ---------------- Invoice sheet ---------------- */
 .invoice-sheet { padding: clamp(22px, 4vw, 40px); }
 .invoice-head { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding-bottom: 20px; border-bottom: 2px solid var(--brand); }
-.invoice-brand { margin: 0; color: var(--brand-strong); font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 1.9rem; }
+.invoice-brand { margin: 0; color: var(--ink-900); font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 1.9rem; }
 .invoice-brand__sub { margin: 4px 0 0; color: var(--ink-600); font-size: .85rem; }
 .invoice-meta { display: grid; gap: 6px; text-align: right; }
 .invoice-meta div { display: grid; }

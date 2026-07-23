@@ -275,10 +275,10 @@ const ProductsPage = () => {
                     </span>
                   </div>
                   <span style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                    <span style={{ color: stockColor(p.stock, p.reorder_level), fontSize: ".82rem", fontWeight: p.stock <= p.reorder_level ? 750 : 400 }}>
+                    <span style={{ color: stockColor(p.stock, p.reorder_level), fontSize: ".82rem", fontWeight: p.stock <= p.reorder_level ? 750 : 400, minWidth: 96, textAlign: "right" }}>
                       Stock {p.stock}{p.stock <= 0 ? " · out" : p.stock <= p.reorder_level ? " · low" : ""}
                     </span>
-                    <strong style={{ color: "var(--ink-900)" }}>{naira(p.price)}</strong>
+                    <strong style={{ color: "var(--ink-900)", minWidth: 88, textAlign: "right" }}>{naira(p.price)}</strong>
                   </span>
                 </div>
               </li>
