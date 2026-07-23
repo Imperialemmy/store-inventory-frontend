@@ -1,7 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
 import PageHeader from "../../components/ui/PageHeader";
+import { type Customer } from "./customerTypes";
+import { queryKeys } from "../../query/queryKeys";
+import { announceDataChange } from "../../query/dataChanges";
 
 interface FormState {
   name: string;
@@ -28,16 +32,22 @@ const emptyForm: FormState = {
 const CustomerForm = () => {
   const { customerId } = useParams<{ customerId?: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isEdit = Boolean(customerId);
 
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ tone: "success" | "error"; text: string } | null>(null);
 
+  const { data: existingCustomer } = useQuery<Customer>({
+    queryKey: queryKeys.customer(customerId!),
+    queryFn: async () => (await api.get<Customer>(`/customers/${customerId}/`)).data,
+    enabled: Boolean(customerId),
+  });
+
   useEffect(() => {
-    if (!customerId) return;
-    api.get(`/customers/${customerId}/`).then((res) => {
-      const c = res.data;
+    if (existingCustomer) {
+      const c = existingCustomer;
       setForm({
         name: c.name ?? "",
         phone_number: c.phone_number ?? "",
@@ -48,8 +58,8 @@ const CustomerForm = () => {
         notes: c.notes ?? "",
         is_active: c.is_active,
       });
-    });
-  }, [customerId]);
+    }
+  }, [existingCustomer]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -74,11 +84,15 @@ const CustomerForm = () => {
     };
 
     try {
-      if (isEdit) {
-        await api.put(`/customers/${customerId}/`, payload);
-      } else {
-        await api.post("/customers/", payload);
-      }
+      const response = isEdit
+        ? await api.put<Customer>(`/customers/${customerId}/`, payload)
+        : await api.post<Customer>("/customers/", payload);
+      queryClient.setQueryData(queryKeys.customer(response.data.id), response.data);
+      queryClient.setQueryData<Customer[]>(queryKeys.customers, (current = []) => {
+        const without = current.filter((customer) => customer.id !== response.data.id);
+        return [...without, response.data];
+      });
+      announceDataChange(["customers"]);
       navigate("/customers");
     } catch {
       setStatus({ tone: "error", text: "Could not save the customer. Check the details and try again." });

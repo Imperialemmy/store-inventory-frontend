@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { Search, Plus, Package, X, Trash2 } from "lucide-react";
 import api from "../../services/api";
 import { useUserRole } from "../../hooks/useUserRole";
-import useAutoRefresh from "../../hooks/useAutoRefresh";
+import { queryKeys } from "../../query/queryKeys";
+import { announceDataChange } from "../../query/dataChanges";
 
 interface Product {
   id: number;
@@ -29,11 +31,17 @@ const emptyDraft = {
 
 const ProductsPage = () => {
   const { canManage } = useUserRole();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
-  const [products, setProducts] = useState<Product[]>([]);
   // Seed from ?q= so the topbar search lands here pre-filtered.
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
-  const [loading, setLoading] = useState(true);
+  const { data: products = [], isLoading: loading } = useQuery<Product[]>({
+    queryKey: queryKeys.products,
+    queryFn: async () => {
+      const response = await api.get("/products/");
+      return response.data.results || response.data;
+    },
+  });
 
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(emptyDraft);
@@ -41,18 +49,6 @@ const ProductsPage = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const popRef = useRef<HTMLDivElement>(null);
-
-  const load = useCallback(() => {
-    api.get("/products/")
-      .then((res) => setProducts(res.data.results || res.data))
-      .catch((err) => console.error("Error fetching products:", err))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-  useAutoRefresh(load);
 
   useEffect(() => {
     if (!open) return;
@@ -141,10 +137,15 @@ const ProductsPage = () => {
 
     setSaving(true);
     try {
-      if (draft.id) await api.patch(`/products/${draft.id}/`, data);
-      else await api.post("/products/", data);
+      const response = draft.id
+        ? await api.patch<Product>(`/products/${draft.id}/`, data)
+        : await api.post<Product>("/products/", data);
+      queryClient.setQueryData<Product[]>(queryKeys.products, (current = []) => {
+        const without = current.filter((product) => product.id !== response.data.id);
+        return [...without, response.data];
+      });
       setOpen(false);
-      load();
+      announceDataChange(["products", "operations"]);
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { name?: string[] } } })?.response?.data;
       setError(detail?.name?.[0] ?? "Could not save the product.");
@@ -157,8 +158,10 @@ const ProductsPage = () => {
     if (!draft.id || !window.confirm(`Delete "${draft.name}"?`)) return;
     try {
       await api.delete(`/products/${draft.id}/`);
+      queryClient.setQueryData<Product[]>(queryKeys.products, (current = []) =>
+        current.filter((product) => product.id !== draft.id));
       setOpen(false);
-      load();
+      announceDataChange(["products", "operations"]);
     } catch {
       setError("Could not delete — it may be used on a sale.");
     }

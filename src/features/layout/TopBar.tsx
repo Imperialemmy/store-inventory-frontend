@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Menu, Bell, AlertTriangle, Clock, PackageX } from "lucide-react";
 import api from "../../services/api";
 import { useUserRole } from "../../hooks/useUserRole";
 import ThemeToggle from "../../components/ThemeToggle";
+import { queryKeys } from "../../query/queryKeys";
 
 interface TopBarProps {
   onMenu: () => void;
@@ -24,16 +26,14 @@ const typeIcon = {
 const TopBar = ({ onMenu }: TopBarProps) => {
   const { role, username } = useUserRole();
   const [open, setOpen] = useState(false);
-  const [alerts, setAlerts] = useState<NotificationItem[]>([]);
   const panelRef = useRef<HTMLDivElement>(null);
+  const { data: alerts = [] } = useQuery<NotificationItem[]>({
+    queryKey: queryKeys.notifications,
+    queryFn: async () => (await api.get("/notifications/")).data.items ?? [],
+    refetchInterval: 30_000,
+  });
 
   const initials = (username || "U").slice(0, 2).toUpperCase();
-
-  useEffect(() => {
-    api.get("/notifications/")
-      .then((res) => setAlerts(res.data.items ?? []))
-      .catch(() => setAlerts([]));
-  }, []);
 
   useEffect(() => {
     if (!open) return;

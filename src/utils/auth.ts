@@ -1,4 +1,5 @@
 import { jwtDecode } from "jwt-decode";
+import { queryClient } from "../query/queryClient";
 
 interface TokenPayload {
   exp?: number;
@@ -18,4 +19,6 @@ export const isTokenValid = (token: string | null) => {
 export const clearSession = () => {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
+  queryClient.clear();
+  window.dispatchEvent(new CustomEvent("akinfolu-auth-change"));
 };

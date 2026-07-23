@@ -1,34 +1,28 @@
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { Printer } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import { type Customer, formatNaira } from "../customerTypes";
 import { type Sale, invoiceStatusLabel } from "../../sales/salesTypes";
+import { queryKeys } from "../../../query/queryKeys";
 
 const CustomerStatement = () => {
   const { customerId } = useParams<{ customerId: string }>();
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [c, s] = await Promise.all([
-        api.get<Customer>(`/customers/${customerId}/`),
-        api.get(`/sales/?customer=${customerId}&page_size=1000`),
-      ]);
-      setCustomer(c.data);
-      setSales(s.data.results || s.data);
-    } finally {
-      setLoading(false);
-    }
-  }, [customerId]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const { data: customer, isLoading: customerLoading } = useQuery<Customer>({
+    queryKey: queryKeys.customer(customerId!),
+    queryFn: async () => (await api.get<Customer>(`/customers/${customerId}/`)).data,
+    enabled: Boolean(customerId),
+  });
+  const { data: sales = [], isLoading: salesLoading } = useQuery<Sale[]>({
+    queryKey: queryKeys.customerSales(customerId!),
+    queryFn: async () => {
+      const response = await api.get(`/sales/?customer=${customerId}&page_size=1000`);
+      return response.data.results || response.data;
+    },
+    enabled: Boolean(customerId),
+  });
+  const loading = customerLoading || salesLoading;
 
   if (loading) return <div className="page-container"><p style={{ color: "var(--ink-600)" }}>Loading…</p></div>;
   if (!customer) return <div className="page-container"><div className="surface empty-state"><strong>Customer not found.</strong></div></div>;

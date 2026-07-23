@@ -6,6 +6,7 @@ import { sidebarNavigation, activeGroupKey, activeSubTo } from "../../config/nav
 import SyncStatus from "../../offline/SyncStatus";
 import GlobalLoadingBar from "../../components/GlobalLoadingBar";
 import useHeartbeat from "../../hooks/useHeartbeat";
+import LiveDataBridge from "../../query/LiveDataBridge";
 
 const AppShell = () => {
   const location = useLocation();
@@ -20,6 +21,7 @@ const AppShell = () => {
   return (
     <div className="app-shell">
       <GlobalLoadingBar />
+      <LiveDataBridge />
       {menuOpen && <div className="sidebar-backdrop" onClick={() => setMenuOpen(false)} />}
       <Sidebar open={menuOpen} onNavigate={() => setMenuOpen(false)} />
 

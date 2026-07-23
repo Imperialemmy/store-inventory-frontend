@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, ShoppingCart, Plus, Minus, UserPlus,
   ChevronDown, X, CheckCircle2, Printer, PauseCircle, Play, Trash2,
@@ -16,6 +16,9 @@ import type {
   HeldSale,
   QueuedSale,
 } from "../../../offline/types";
+import { announceDataChange, DATA_CHANGE_EVENT, type DataChange } from "../../../query/dataChanges";
+import { queryClient } from "../../../query/queryClient";
+import { queryKeys } from "../../../query/queryKeys";
 
 // Prices are final at this store — the total is exactly the item prices,
 // no VAT or extra fees on top.
@@ -64,6 +67,27 @@ const PointOfSale = () => {
   const [heldOpen, setHeldOpen] = useState(false);
   const comboRef = useRef<HTMLDivElement>(null);
 
+  const refreshCatalogue = useCallback(async () => {
+    const [productResponse, customerResponse] = await Promise.all([
+      api.get("/products/"),
+      api.get("/customers/?page_size=1000"),
+    ]);
+    const freshProducts: CachedProduct[] = productResponse.data.results || productResponse.data;
+    let freshCustomers: CachedCustomer[] = customerResponse.data.results || customerResponse.data;
+    let walkInCustomer = freshCustomers.find((customer) => customer.name === WALK_IN_NAME);
+    if (!walkInCustomer) {
+      const response = await api.get<CachedCustomer>("/customers/walk-in/");
+      walkInCustomer = response.data;
+      freshCustomers = [...freshCustomers, walkInCustomer];
+    }
+    await Promise.all([
+      offlineDb.products.replace(freshProducts),
+      offlineDb.customers.replace(freshCustomers),
+    ]);
+    setProducts(freshProducts);
+    setCustomers(freshCustomers);
+  }, []);
+
   useEffect(() => {
     let active = true;
     const hydrate = async () => {
@@ -89,25 +113,8 @@ const PointOfSale = () => {
       setHydrated(true);
 
       try {
-        const [productResponse, customerResponse] = await Promise.all([
-          api.get("/products/"),
-          api.get("/customers/?page_size=1000"),
-        ]);
-        const freshProducts = productResponse.data.results || productResponse.data;
-        let freshCustomers: CachedCustomer[] = customerResponse.data.results || customerResponse.data;
-        let walkIn = freshCustomers.find((c) => c.name === WALK_IN_NAME);
-        if (!walkIn) {
-          const response = await api.get<CachedCustomer>("/customers/walk-in/");
-          walkIn = response.data;
-          freshCustomers = [...freshCustomers, walkIn];
-        }
-        await Promise.all([
-          offlineDb.products.replace(freshProducts),
-          offlineDb.customers.replace(freshCustomers),
-        ]);
         if (!active) return;
-        setProducts(freshProducts);
-        setCustomers(freshCustomers);
+        await refreshCatalogue();
       } catch {
         // Cached catalogue remains fully usable. Connectivity is represented
         // by the global sync strip rather than a blocking POS error.
@@ -115,7 +122,17 @@ const PointOfSale = () => {
     };
     void hydrate();
     return () => { active = false; };
-  }, []);
+  }, [refreshCatalogue]);
+
+  useEffect(() => {
+    const onDataChange = (event: Event) => {
+      const resources = (event as CustomEvent<DataChange>).detail?.resources ?? [];
+      if (!resources.some((resource) => resource === "products" || resource === "customers")) return;
+      void refreshCatalogue().catch(() => undefined);
+    };
+    window.addEventListener(DATA_CHANGE_EVENT, onDataChange);
+    return () => window.removeEventListener(DATA_CHANGE_EVENT, onDataChange);
+  }, [refreshCatalogue]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -250,6 +267,7 @@ const PointOfSale = () => {
       const response = await api.post<CachedCustomer>("/customers/", { name });
       await offlineDb.customers.put(response.data);
       setCustomers((previous) => [...previous, response.data]);
+      announceDataChange(["customers"]);
       selectCustomer(response.data);
       setAddingCustomer(false);
       setNewCustomerName("");
@@ -365,6 +383,20 @@ const PointOfSale = () => {
       });
       await offlineDb.meta.put("productUsage", nextUsage);
       await offlineDb.cart.clear();
+
+      // Reserve the sold stock immediately in the offline catalogue. The
+      // server event reconciles these counts after synchronization succeeds.
+      const optimisticProducts = products.map((product) => {
+        const sold = cart.find((line) => line.product.id === product.id)?.quantity ?? 0;
+        return sold ? { ...product, stock: product.stock - sold } : product;
+      });
+      setProducts(optimisticProducts);
+      await offlineDb.products.replace(optimisticProducts);
+      queryClient.setQueryData<Array<{ id: number; stock: number }>>(queryKeys.products, (current) =>
+        current?.map((product) => {
+          const sold = cart.find((line) => line.product.id === product.id)?.quantity ?? 0;
+          return sold ? { ...product, stock: product.stock - sold } : product;
+        }));
 
       // Snapshot for the printable receipt before the cart is cleared.
       setLastSale({

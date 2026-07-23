@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../services/api";
 import PageHeader from "../../components/ui/PageHeader";
+import { queryKeys } from "../../query/queryKeys";
+import { announceDataChange } from "../../query/dataChanges";
 
 interface TeamUser {
   id: number;
@@ -14,26 +16,25 @@ interface TeamUser {
 }
 
 const TeamPage = () => {
-  const [users, setUsers] = useState<TeamUser[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(() => {
-    setLoading(true);
-    api.get("/users/")
-      .then((res) => setUsers(res.data.results || res.data))
-      .catch((err) => console.error("Error fetching users:", err))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const queryClient = useQueryClient();
+  const { data: users = [], isLoading: loading } = useQuery<TeamUser[]>({
+    queryKey: queryKeys.team,
+    queryFn: async () => {
+      const response = await api.get("/users/");
+      return response.data.results || response.data;
+    },
+  });
 
   const act = async (id: number, action: "approve" | "deactivate" | "remove") => {
     if (action === "remove" && !window.confirm("Remove this account permanently?")) return;
     try {
-      await api.post(`/users/${id}/${action}/`);
-      load();
+      const response = await api.post<TeamUser | undefined>(`/users/${id}/${action}/`);
+      queryClient.setQueryData<TeamUser[]>(queryKeys.team, (current = []) => {
+        if (action === "remove") return current.filter((user) => user.id !== id);
+        if (!response.data) return current;
+        return current.map((user) => user.id === id ? response.data as TeamUser : user);
+      });
+      announceDataChange(["team"]);
     } catch {
       window.alert("Action failed.");
     }

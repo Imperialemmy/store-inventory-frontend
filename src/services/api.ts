@@ -1,4 +1,5 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
+import { clearSession } from "../utils/auth";
 
 interface RetryableRequest extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -63,8 +64,7 @@ api.interceptors.response.use(
     // This account logged in somewhere else — the backend rejected our
     // session outright, so refreshing won't help. Sign out with a reason.
     if (error.response?.status === 401 && error.response.data?.code === "session_replaced") {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+      clearSession();
       if (window.location.pathname !== "/login") window.location.assign("/login?reason=session-replaced");
       return Promise.reject(error);
     }
@@ -85,8 +85,7 @@ api.interceptors.response.use(
       request.headers.Authorization = `JWT ${data.access}`;
       return api(request);
     } catch (refreshError) {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+      clearSession();
       if (window.location.pathname !== "/login") window.location.assign("/login");
       return Promise.reject(refreshError);
     }

@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import api from "../../../services/api";
-import useAutoRefresh from "../../../hooks/useAutoRefresh";
 import PageHeader from "../../../components/ui/PageHeader";
 import { type Sale, formatNaira, invoiceStatusLabel } from "../salesTypes";
 import { offlineDb } from "../../../offline/db";
 import { SYNC_EVENT } from "../../../offline/sync";
 import type { QueuedSale } from "../../../offline/types";
+import { queryKeys } from "../../../query/queryKeys";
 
 interface OperationsSummary {
   sales_total: string;
@@ -33,24 +34,19 @@ const invoiceStatusColor = (sale: Sale) => {
 
 const SalesList = () => {
   const navigate = useNavigate();
-  const [sales, setSales] = useState<Sale[]>([]);
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
   const [localSales, setLocalSales] = useState<QueuedSale[]>([]);
-  const [summary, setSummary] = useState<OperationsSummary | null>(null);
-
-  const load = useCallback(() => {
-    api.get("/sales/?page_size=200")
-      .then((res) => setSales(res.data.results || res.data))
-      .catch((err) => console.error("Error fetching sales:", err))
-      .finally(() => setLoading(false));
-    api.get("/operations-summary/")
-      .then((res) => setSummary(res.data))
-      .catch(() => setSummary(null));
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-  useAutoRefresh(load);
+  const { data: sales = [], isLoading: loading } = useQuery<Sale[]>({
+    queryKey: queryKeys.sales,
+    queryFn: async () => {
+      const response = await api.get("/sales/?page_size=200");
+      return response.data.results || response.data;
+    },
+  });
+  const { data: summary = null } = useQuery<OperationsSummary>({
+    queryKey: queryKeys.operations,
+    queryFn: async () => (await api.get("/operations-summary/")).data,
+  });
 
   useEffect(() => {
     const loadLocal = () => {

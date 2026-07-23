@@ -1,43 +1,41 @@
-import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import { useUserRole } from "../../../hooks/useUserRole";
 import { type Customer, formatNaira } from "../customerTypes";
 import { type Sale, invoiceStatusLabel } from "../../sales/salesTypes";
+import { queryKeys } from "../../../query/queryKeys";
+import { announceDataChange } from "../../../query/dataChanges";
 
 const CustomerDetail = () => {
   const { customerId } = useParams<{ customerId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const userRole = useUserRole();
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchCustomer = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [c, s] = await Promise.all([
-        api.get<Customer>(`/customers/${customerId}/`),
-        api.get(`/sales/?customer=${customerId}&page_size=100`),
-      ]);
-      setCustomer(c.data);
-      setSales(s.data.results || s.data);
-    } catch (error) {
-      console.error("Failed to fetch customer:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [customerId]);
-
-  useEffect(() => {
-    fetchCustomer();
-  }, [fetchCustomer]);
+  const { data: customer, isLoading: customerLoading } = useQuery<Customer>({
+    queryKey: queryKeys.customer(customerId!),
+    queryFn: async () => (await api.get<Customer>(`/customers/${customerId}/`)).data,
+    enabled: Boolean(customerId),
+  });
+  const { data: sales = [], isLoading: salesLoading } = useQuery<Sale[]>({
+    queryKey: queryKeys.customerSales(customerId!),
+    queryFn: async () => {
+      const response = await api.get(`/sales/?customer=${customerId}&page_size=100`);
+      return response.data.results || response.data;
+    },
+    enabled: Boolean(customerId),
+  });
+  const loading = customerLoading || salesLoading;
 
   const handleDelete = async () => {
     if (!window.confirm("Delete this customer?")) return;
     try {
       await api.delete(`/customers/${customerId}/`);
+      queryClient.removeQueries({ queryKey: queryKeys.customer(customerId!) });
+      queryClient.setQueryData<Customer[]>(queryKeys.customers, (current = []) =>
+        current.filter((entry) => entry.id !== Number(customerId)));
+      announceDataChange(["customers"]);
       navigate("/customers");
     } catch (error) {
       console.error("Failed to delete customer:", error);

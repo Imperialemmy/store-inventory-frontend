@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
+import { queryClient } from "../../query/queryClient";
 
 const useLogin = () => {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ const useLogin = () => {
       const data = res.data;
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
+      queryClient.clear();
       window.dispatchEvent(new CustomEvent("akinfolu-auth-change"));
 
       navigate("/sales");

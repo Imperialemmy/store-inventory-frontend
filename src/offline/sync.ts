@@ -1,6 +1,9 @@
 import api from "../services/api";
 import { offlineDb } from "./db";
 import type { QueuedSale, SyncSnapshot } from "./types";
+import { announceDataChange } from "../query/dataChanges";
+import { queryClient } from "../query/queryClient";
+import { queryKeys } from "../query/queryKeys";
 
 export const SYNC_EVENT = "akinfolu-sync-change";
 let activeSync: Promise<void> | null = null;
@@ -64,6 +67,12 @@ const syncOne = async (sale: QueuedSale) => {
       synced_at: new Date().toISOString(),
     });
     await offlineDb.meta.put("lastSyncedAt", new Date().toISOString());
+    queryClient.setQueryData<unknown[]>(queryKeys.sales, (current = []) => {
+      const without = current.filter((entry) =>
+        typeof entry !== "object" || entry === null || !("id" in entry) || entry.id !== response.data.id);
+      return [response.data, ...without];
+    });
+    announceDataChange(["sales", "products", "customers", "operations", "notifications"], "offline-sync");
   } catch (error) {
     const retryCount = sale.retry_count + 1;
     await offlineDb.sales.put({

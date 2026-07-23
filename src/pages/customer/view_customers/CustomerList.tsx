@@ -1,28 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Plus } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import { useUserRole } from "../../../hooks/useUserRole";
-import useAutoRefresh from "../../../hooks/useAutoRefresh";
+import { queryKeys } from "../../../query/queryKeys";
 import { type Customer } from "../customerTypes";
 
 const CustomerList = () => {
   const navigate = useNavigate();
   const { canSell } = useUserRole();
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(() => {
-    api.get("/customers/?page_size=1000")
-      .then((res) => setCustomers(res.data.results || res.data))
-      .catch((err) => console.error("Error fetching customers:", err))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-  useAutoRefresh(load);
+  const { data: customers = [], isLoading: loading } = useQuery<Customer[]>({
+    queryKey: queryKeys.customers,
+    queryFn: async () => {
+      const response = await api.get("/customers/?page_size=1000");
+      return response.data.results || response.data;
+    },
+  });
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();

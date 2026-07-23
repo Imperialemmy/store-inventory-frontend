@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Printer } from "lucide-react";
 import api from "../../../services/api";
@@ -6,13 +7,19 @@ import PageHeader from "../../../components/ui/PageHeader";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import { useUserRole } from "../../../hooks/useUserRole";
 import { type Sale, PAYMENT_METHODS, formatNaira, invoiceStatusLabel } from "../salesTypes";
+import { queryKeys } from "../../../query/queryKeys";
+import { announceDataChange } from "../../../query/dataChanges";
 
 const SaleDetail = () => {
   const { saleId } = useParams<{ saleId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const userRole = useUserRole();
-  const [sale, setSale] = useState<Sale | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: sale, isLoading: loading, refetch: refetchSale } = useQuery<Sale>({
+    queryKey: queryKeys.sale(saleId!),
+    queryFn: async () => (await api.get<Sale>(`/sales/${saleId}/`)).data,
+    enabled: Boolean(saleId),
+  });
 
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("cash");
@@ -35,22 +42,20 @@ const SaleDetail = () => {
   const [savingReturn, setSavingReturn] = useState(false);
   const [confirmReturnOpen, setConfirmReturnOpen] = useState(false);
 
-  const fetchSale = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await api.get<Sale>(`/sales/${saleId}/`);
-      setSale(res.data);
-      setRefundAmount((current) => current || (Number(res.data.refund_due) > 0 ? res.data.refund_due : ""));
-    } catch (error) {
-      console.error("Failed to fetch sale:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [saleId]);
-
   useEffect(() => {
-    fetchSale();
-  }, [fetchSale]);
+    if (!sale || Number(sale.refund_due) <= 0) return;
+    setRefundAmount((current) => current || sale.refund_due);
+  }, [sale]);
+
+  const refreshEverySaleView = async () => {
+    const result = await refetchSale();
+    const updated = result.data;
+    if (!updated) return;
+    const replace = (current: Sale[] | undefined) =>
+      current?.map((entry) => entry.id === updated.id ? updated : entry);
+    queryClient.setQueryData<Sale[]>(queryKeys.sales, replace);
+    queryClient.setQueriesData<Sale[]>({ queryKey: ["sales", "customer"] }, replace);
+  };
 
   const handleAddPayment = async (event: FormEvent) => {
     event.preventDefault();
@@ -61,7 +66,8 @@ const SaleDetail = () => {
       await api.post("/payments/", { sale: Number(saleId), amount, method, reference: reference || null });
       setAmount("");
       setReference("");
-      await fetchSale();
+      await refreshEverySaleView();
+      announceDataChange(["sales", "operations", "notifications"]);
     } catch {
       setPayError("Could not record the payment.");
     } finally {
@@ -101,7 +107,8 @@ const SaleDetail = () => {
       const recordedAmount = refundAmount;
       setRefundAmount("");
       setRefundReference("");
-      await fetchSale();
+      await refreshEverySaleView();
+      announceDataChange(["sales", "operations", "notifications"]);
       setRefundSuccess(`${formatNaira(recordedAmount)} refund recorded.`);
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: unknown } })?.response?.data;
@@ -165,7 +172,8 @@ const SaleDetail = () => {
       });
       setReturnQty({});
       setReturnReason("");
-      await fetchSale();
+      await refreshEverySaleView();
+      announceDataChange(["sales", "products", "operations", "notifications"]);
       setReturnSuccess(`Return recorded — ${totalUnits} unit${totalUnits === 1 ? "" : "s"} credited and restocked.`);
       // Let the confirmation land, then return to the invoices list.
       setTimeout(() => navigate("/sales/invoices"), 1300);
