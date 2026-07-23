@@ -423,6 +423,18 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .pos-qty input::-webkit-outer-spin-button, .pos-qty input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .pos-cart-close { display: none; width: 44px; height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--ink-700); }
 .pos-record { width: 100%; min-height: 50px; margin-top: 14px; }
+.pos-hold { width: 100%; min-height: 44px; margin-top: 8px; }
+
+/* Held (suspended) sales panel */
+.held-panel { width: min(100%, 440px); max-height: min(80vh, 620px); overflow-y: auto; padding: 20px; border-radius: 16px; box-shadow: var(--shadow-md); }
+.held-panel__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.held-panel__head h3 { margin: 0; color: var(--ink-900); }
+.held-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.held-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
+.held-row__info { display: grid; min-width: 0; }
+.held-row__info strong { color: var(--ink-900); font-size: .92rem; }
+.held-row__info small { color: var(--ink-600); font-size: .78rem; }
+.held-row__actions { display: flex; gap: 8px; flex: 0 0 auto; }
 .payment-choice { margin: 16px 0 0; padding: 0; border: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .payment-choice legend { margin-bottom: 8px; color: var(--ink-900); font-size: .82rem; font-weight: 750; }
 .payment-choice label { min-height: 44px; display: flex; align-items: center; justify-content: center; padding: 8px; border: 1px solid var(--line-strong); border-radius: 10px; color: var(--ink-700); cursor: pointer; }

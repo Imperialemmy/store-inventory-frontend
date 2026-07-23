@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, ShoppingCart, Plus, Minus, UserPlus,
-  ChevronDown, X, CheckCircle2, Printer,
+  ChevronDown, X, CheckCircle2, Printer, PauseCircle, Play, Trash2,
 } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
@@ -13,6 +13,7 @@ import type {
   CachedCustomer,
   CachedProduct,
   CartLine,
+  HeldSale,
   QueuedSale,
 } from "../../../offline/types";
 
@@ -59,20 +60,24 @@ const PointOfSale = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [postSaleOpen, setPostSaleOpen] = useState(false);
   const [lastSale, setLastSale] = useState<Receipt | null>(null);
+  const [held, setHeld] = useState<HeldSale[]>([]);
+  const [heldOpen, setHeldOpen] = useState(false);
   const comboRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let active = true;
     const hydrate = async () => {
-      const [cachedProducts, cachedCustomers, draft, usage] = await Promise.all([
+      const [cachedProducts, cachedCustomers, draft, usage, heldSales] = await Promise.all([
         offlineDb.products.all(),
         offlineDb.customers.all(),
         offlineDb.cart.get(),
         offlineDb.meta.get<Record<number, number>>("productUsage"),
+        offlineDb.held.all(),
       ]);
       if (!active) return;
       setProducts(cachedProducts);
       setCustomers(cachedCustomers);
+      setHeld(heldSales.sort((a, b) => b.held_at.localeCompare(a.held_at)));
       setProductUsage(usage?.value ?? {});
       if (draft) {
         setCart(draft.lines);
@@ -253,6 +258,60 @@ const PointOfSale = () => {
     }
   };
 
+  const resetActiveCart = async () => {
+    setCart([]);
+    setCustomerId("");
+    setCustomerSearch("");
+    setWalkIn(false);
+    setPaymentMethod("cash");
+    setProductQuery("");
+    setCartOpen(false);
+    await offlineDb.cart.clear();
+  };
+
+  // Park the current cart so a new sale can be started, then resumed later.
+  const holdSale = async () => {
+    if (cart.length === 0) return;
+    const who = walkIn ? "Walk-in" : (customerSearch.trim() || "No customer");
+    const time = new Intl.DateTimeFormat("en-NG", { timeZone: "Africa/Lagos", hour: "2-digit", minute: "2-digit" }).format(new Date());
+    const entry: HeldSale = {
+      id: createUuid(),
+      label: `${who} · ${time}`,
+      customerId,
+      customerName: walkIn ? WALK_IN_NAME : customerSearch,
+      lines: cart,
+      paymentMethod,
+      held_at: new Date().toISOString(),
+    };
+    await offlineDb.held.put(entry);
+    setHeld((previous) => [entry, ...previous]);
+    setError(null);
+    setSuccess(null);
+    await resetActiveCart();
+  };
+
+  const resumeSale = async (entry: HeldSale) => {
+    // Auto-park whatever is on the counter now so nothing is lost.
+    if (cart.length > 0) await holdSale();
+    const isWalk = entry.customerName === WALK_IN_NAME;
+    setCart(entry.lines);
+    setCustomerId(entry.customerId);
+    setWalkIn(isWalk);
+    setCustomerSearch(isWalk ? "" : entry.customerName);
+    setPaymentMethod(entry.paymentMethod);
+    await offlineDb.held.remove(entry.id);
+    setHeld((previous) => previous.filter((h) => h.id !== entry.id));
+    setHeldOpen(false);
+  };
+
+  const discardHeld = async (id: string) => {
+    await offlineDb.held.remove(id);
+    setHeld((previous) => previous.filter((h) => h.id !== id));
+  };
+
+  const heldTotal = (entry: HeldSale) =>
+    entry.lines.reduce((sum, line) => sum + Number(line.product.price) * line.quantity, 0);
+
   // Validate, then ask for confirmation before recording.
   const requestComplete = () => {
     setError(null);
@@ -407,13 +466,27 @@ const PointOfSale = () => {
           <ShoppingCart size={18} />
           {saving ? "Saving on this device…" : `Record sale · ${formatNaira(total)}`}
         </button>
+        {cart.length > 0 && (
+          <button type="button" className="button button--ghost pos-hold" onClick={() => void holdSale()} disabled={saving}>
+            <PauseCircle size={17} /> Hold sale
+          </button>
+        )}
       </div>
     </div>
   );
 
   return (
     <div className="page-container pos-page">
-      <PageHeader eyebrow="Point of sale" title="New sale" description="Every sale is saved on this device first." />
+      <PageHeader
+        eyebrow="Point of sale"
+        title="New sale"
+        description="Every sale is saved on this device first."
+        action={held.length > 0 ? (
+          <button type="button" className="button button--ghost" onClick={() => setHeldOpen(true)}>
+            <PauseCircle size={17} /> Held ({held.length})
+          </button>
+        ) : undefined}
+      />
 
       {error && <div className="notice notice--error" role="alert">{error}</div>}
       {success && (
@@ -582,6 +655,40 @@ const PointOfSale = () => {
                 <Printer size={17} /> Print receipt
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Held (suspended) sales drawer */}
+      {heldOpen && (
+        <div className="modal-overlay confirm-overlay" role="dialog" aria-modal="true" aria-label="Held sales" onClick={() => setHeldOpen(false)}>
+          <div className="held-panel surface" onClick={(e) => e.stopPropagation()}>
+            <div className="held-panel__head">
+              <h3>Held sales ({held.length})</h3>
+              <button type="button" className="product-pop__close" onClick={() => setHeldOpen(false)} aria-label="Close"><X size={18} /></button>
+            </div>
+            {held.length === 0 ? (
+              <p className="muted">No sales are on hold.</p>
+            ) : (
+              <ul className="held-list">
+                {held.map((entry) => (
+                  <li key={entry.id} className="held-row">
+                    <div className="held-row__info">
+                      <strong>{entry.label}</strong>
+                      <small>{entry.lines.reduce((n, l) => n + l.quantity, 0)} item(s) · {formatNaira(heldTotal(entry))}</small>
+                    </div>
+                    <div className="held-row__actions">
+                      <button type="button" className="button button--primary button--small" onClick={() => void resumeSale(entry)}>
+                        <Play size={15} /> Resume
+                      </button>
+                      <button type="button" className="button button--ghost button--small" onClick={() => void discardHeld(entry.id)} aria-label="Discard held sale" style={{ color: "var(--danger)" }}>
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       )}

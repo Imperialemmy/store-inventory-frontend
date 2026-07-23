@@ -28,6 +28,17 @@ export interface CartDraft {
   updatedAt: string;
 }
 
+/** A suspended (parked) sale, held locally until it is resumed. */
+export interface HeldSale {
+  id: string;
+  label: string;
+  customerId: number | "";
+  customerName: string;
+  lines: CartLine[];
+  paymentMethod: "cash" | "transfer" | "pos" | "pay_later";
+  held_at: string;
+}
+
 export type QueueState = "pending" | "syncing" | "synced" | "needs_attention";
 
 export interface QueuedSale {
