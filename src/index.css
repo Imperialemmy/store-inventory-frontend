@@ -307,6 +307,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .confirm-card__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .confirm-card__actions .button { min-height: 44px; }
 
+/* POS receipt — hidden on screen, laid out only when printing. */
+.pos-receipt { display: none; }
+.pos-receipt__meta { margin: 2px 0; font-size: .82rem; }
+.pos-receipt__table { width: 100%; margin: 10px 0; border-collapse: collapse; }
+.pos-receipt__table td { padding: 3px 0; font-size: .85rem; vertical-align: top; }
+.pos-receipt__amt { text-align: right; white-space: nowrap; }
+.pos-receipt__total { display: flex; justify-content: space-between; margin: 8px 0 0; padding-top: 8px; border-top: 1px dashed #000; font-weight: 800; font-size: 1rem; }
+.pos-receipt__foot { margin-top: 14px; text-align: center; font-size: .8rem; }
+
 /* ---------------- Stat cards ---------------- */
 .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
 .stat-card { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 20px; }
@@ -501,6 +510,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .invoice-sheet { border: 0; box-shadow: none; }
   .invoice-sheet, .invoice-sheet * { color: #111 !important; }
   .invoice-brand, .invoice-meta strong, .invoice-billto strong { color: #15568f !important; }
+
+  /* When printing from the POS, show only the receipt. */
+  .pos-page > *:not(.pos-receipt) { display: none !important; }
+  .pos-receipt { display: block !important; max-width: 320px; margin: 0 auto; color: #000 !important; }
+  .pos-receipt h2 { margin: 0 0 4px; text-align: center; font-size: 1.2rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
