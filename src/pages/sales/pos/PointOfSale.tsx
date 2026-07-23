@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, ShoppingCart, Plus, Minus, UserPlus,
-  ChevronDown, X, CheckCircle2,
+  ChevronDown, X, CheckCircle2, Printer,
 } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
@@ -24,6 +24,19 @@ const WALK_IN_NAME = "Walk-in Customer";
 const stockColor = (stock: number, reorder = 5) =>
   stock <= 0 ? "var(--danger)" : stock <= reorder ? "var(--amber)" : "var(--ok)";
 
+interface Receipt {
+  reference: string;
+  customerName: string;
+  date: string;
+  paymentMethod: string;
+  items: { name: string; quantity: number; price: string }[];
+  total: number;
+}
+
+const paymentLabel: Record<string, string> = {
+  cash: "Cash", transfer: "Transfer", pos: "POS", pay_later: "Pay later",
+};
+
 const PointOfSale = () => {
   const [customers, setCustomers] = useState<CachedCustomer[]>([]);
   const [products, setProducts] = useState<CachedProduct[]>([]);
@@ -44,6 +57,8 @@ const PointOfSale = () => {
   const [addingCustomer, setAddingCustomer] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [postSaleOpen, setPostSaleOpen] = useState(false);
+  const [lastSale, setLastSale] = useState<Receipt | null>(null);
   const comboRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -291,11 +306,25 @@ const PointOfSale = () => {
       });
       await offlineDb.meta.put("productUsage", nextUsage);
       await offlineDb.cart.clear();
+
+      // Snapshot for the printable receipt before the cart is cleared.
+      setLastSale({
+        reference: localReference,
+        customerName: customer.name,
+        date: new Intl.DateTimeFormat("en-NG", {
+          timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short",
+        }).format(new Date()),
+        paymentMethod,
+        items: cart.map((line) => ({ name: line.product.name, quantity: line.quantity, price: line.product.price })),
+        total,
+      });
+
       setProductUsage(nextUsage);
       setCart([]);
       setProductQuery("");
       setCartOpen(false);
       setSuccess(`${localReference} is saved safely on this device.`);
+      setPostSaleOpen(true);
       void syncPendingSales();
     } catch {
       setError("This device could not save the sale. Keep this screen open and try again.");
@@ -538,6 +567,46 @@ const PointOfSale = () => {
         onConfirm={() => void completeSale()}
         onCancel={() => setConfirmOpen(false)}
       />
+
+      {/* After a sale is recorded: print a receipt or return to a fresh sale. */}
+      {postSaleOpen && (
+        <div className="modal-overlay confirm-overlay" role="dialog" aria-modal="true" aria-label="Sale recorded">
+          <div className="confirm-card surface">
+            <h3 className="confirm-card__title">Sale recorded ✓</h3>
+            <div className="confirm-card__body">
+              {lastSale?.reference} — {formatNaira(lastSale?.total ?? 0)}. Print a receipt or start a new sale.
+            </div>
+            <div className="confirm-card__actions">
+              <button type="button" className="button button--ghost" onClick={() => setPostSaleOpen(false)}>Back to home</button>
+              <button type="button" className="button button--primary" onClick={() => window.print()}>
+                <Printer size={17} /> Print receipt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {lastSale && (
+        <div className="pos-receipt" aria-hidden="true">
+          <h2>AkinFolu Foods</h2>
+          <p className="pos-receipt__meta">{lastSale.date}</p>
+          <p className="pos-receipt__meta">Ref: {lastSale.reference}</p>
+          <p className="pos-receipt__meta">Customer: {lastSale.customerName}</p>
+          <table className="pos-receipt__table">
+            <tbody>
+              {lastSale.items.map((item, index) => (
+                <tr key={index}>
+                  <td>{item.quantity} × {item.name}</td>
+                  <td className="pos-receipt__amt">{formatNaira(Number(item.price) * item.quantity)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="pos-receipt__total"><span>Total</span><span>{formatNaira(lastSale.total)}</span></p>
+          <p className="pos-receipt__meta">Payment: {paymentLabel[lastSale.paymentMethod] ?? lastSale.paymentMethod}</p>
+          <p className="pos-receipt__foot">Thank you for your patronage.</p>
+        </div>
+      )}
     </div>
   );
 };
