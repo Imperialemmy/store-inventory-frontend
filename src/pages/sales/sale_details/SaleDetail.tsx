@@ -5,7 +5,7 @@ import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import { useUserRole } from "../../../hooks/useUserRole";
-import { type Sale, PAYMENT_METHODS, formatNaira, statusLabel } from "../salesTypes";
+import { type Sale, PAYMENT_METHODS, formatNaira, invoiceStatusLabel } from "../salesTypes";
 
 const SaleDetail = () => {
   const { saleId } = useParams<{ saleId: string }>();
@@ -127,7 +127,7 @@ const SaleDetail = () => {
       <PageHeader
         eyebrow="Invoice"
         title={sale.invoice_number}
-        description={`${sale.customer_name} · ${statusLabel(sale.payment_status)}`}
+        description={`${sale.customer_name} · ${invoiceStatusLabel(sale)}${Number(sale.refund_due) > 0 ? ` · ${formatNaira(sale.refund_due)} refund due` : ""}`}
         action={
           <div className="page-actions no-print">
             <button className="button button--ghost" onClick={() => window.print()}>
@@ -181,17 +181,23 @@ const SaleDetail = () => {
           <div><dt>Subtotal</dt><dd>{formatNaira(sale.subtotal)}</dd></div>
           {Number(sale.discount) > 0 && <div><dt>Discount</dt><dd>− {formatNaira(sale.discount)}</dd></div>}
           {Number(sale.vat_amount) > 0 && <div><dt>VAT ({sale.vat_rate}%)</dt><dd>{formatNaira(sale.vat_amount)}</dd></div>}
-          <div className="sale-totals__grand"><dt>Total</dt><dd>{formatNaira(sale.total)}</dd></div>
-          <div><dt>Paid</dt><dd>{formatNaira(sale.amount_paid)}</dd></div>
+          <div className={Number(sale.amount_credited) > 0 ? "" : "sale-totals__grand"}>
+            <dt>{Number(sale.amount_credited) > 0 ? "Original total" : "Total"}</dt>
+            <dd>{formatNaira(sale.total)}</dd>
+          </div>
           {Number(sale.amount_credited) > 0 && (
             <div><dt>Credited (returns)</dt><dd>− {formatNaira(sale.amount_credited)}</dd></div>
           )}
-          {Number(sale.balance) < 0 ? (
-            <div className="sale-totals__grand"><dt>Refund due</dt><dd>{formatNaira(Math.abs(Number(sale.balance)))}</dd></div>
-          ) : Number(sale.balance) === 0 ? (
+          {Number(sale.amount_credited) > 0 && (
+            <div className="sale-totals__grand"><dt>Net sale</dt><dd>{formatNaira(sale.net_total)}</dd></div>
+          )}
+          <div><dt>Paid</dt><dd>{formatNaira(sale.amount_paid)}</dd></div>
+          {Number(sale.refund_due) > 0 ? (
+            <div className="sale-totals__grand"><dt>Refund due</dt><dd>{formatNaira(sale.refund_due)}</dd></div>
+          ) : Number(sale.receivable) === 0 ? (
             <div className="sale-totals__grand"><dt>Balance</dt><dd>Settled</dd></div>
           ) : (
-            <div className="sale-totals__grand"><dt>Balance due</dt><dd>{formatNaira(sale.balance)}</dd></div>
+            <div className="sale-totals__grand"><dt>Balance due</dt><dd>{formatNaira(sale.receivable)}</dd></div>
           )}
         </dl>
 
@@ -223,13 +229,13 @@ const SaleDetail = () => {
           <p style={{ color: "var(--ink-600)" }}>No payments recorded yet.</p>
         )}
 
-        {Number(sale.balance) > 0 && (
+        {Number(sale.receivable) > 0 && (
           <form onSubmit={handleAddPayment}>
             {payError && <div className="notice notice--error" role="alert">{payError}</div>}
             <div className="form-grid sale-summary__inputs">
               <label className="field">
                 <span>Amount (₦)</span>
-                <input type="number" min={0} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={String(sale.balance)} />
+                <input type="number" min={0} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={String(sale.receivable)} />
               </label>
               <label className="field">
                 <span>Method</span>

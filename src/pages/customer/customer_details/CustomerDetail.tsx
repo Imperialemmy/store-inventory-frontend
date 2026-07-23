@@ -4,7 +4,7 @@ import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import { useUserRole } from "../../../hooks/useUserRole";
 import { type Customer, formatNaira } from "../customerTypes";
-import { type Sale, statusLabel } from "../../sales/salesTypes";
+import { type Sale, invoiceStatusLabel } from "../../sales/salesTypes";
 
 const CustomerDetail = () => {
   const { customerId } = useParams<{ customerId: string }>();
@@ -107,16 +107,27 @@ const CustomerDetail = () => {
           ) : (
             <table className="glass-table" style={{ marginTop: "12px" }}>
               <thead>
-                <tr><th>Invoice</th><th>Date</th><th style={{ textAlign: "right" }}>Total</th><th style={{ textAlign: "right" }}>Balance</th></tr>
+                <tr><th>Invoice</th><th>Date</th><th style={{ textAlign: "right" }}>Net total</th><th style={{ textAlign: "right" }}>Position</th></tr>
               </thead>
               <tbody>
                 {sales.map((s) => (
                   <tr key={s.id} style={{ cursor: "pointer" }} onClick={() => navigate(`/sales/${s.id}`)}>
                     <td>{s.invoice_number}</td>
                     <td>{s.date}</td>
-                    <td style={{ textAlign: "right" }}>{formatNaira(s.total)}</td>
-                    <td style={{ textAlign: "right", color: Number(s.balance) > 0 ? "var(--tomato-500)" : "var(--leaf-650)" }}>
-                      {Number(s.balance) > 0 ? formatNaira(s.balance) : statusLabel(s.payment_status)}
+                    <td style={{ textAlign: "right" }}>{formatNaira(s.net_total)}</td>
+                    <td style={{
+                      textAlign: "right",
+                      color: Number(s.refund_due) > 0
+                        ? "var(--amber)"
+                        : Number(s.receivable) > 0
+                          ? "var(--tomato-500)"
+                          : "var(--leaf-650)",
+                    }}>
+                      {Number(s.refund_due) > 0
+                        ? `${formatNaira(s.refund_due)} refund`
+                        : Number(s.receivable) > 0
+                          ? `${formatNaira(s.receivable)} due`
+                          : invoiceStatusLabel(s)}
                     </td>
                   </tr>
                 ))}

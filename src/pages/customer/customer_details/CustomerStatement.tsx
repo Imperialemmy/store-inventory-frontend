@@ -4,7 +4,7 @@ import { Printer } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import { type Customer, formatNaira } from "../customerTypes";
-import { type Sale } from "../../sales/salesTypes";
+import { type Sale, invoiceStatusLabel } from "../../sales/salesTypes";
 
 const CustomerStatement = () => {
   const { customerId } = useParams<{ customerId: string }>();
@@ -35,8 +35,11 @@ const CustomerStatement = () => {
 
   const ordered = [...sales].sort((a, b) => a.date.localeCompare(b.date));
   const totalBilled = ordered.reduce((sum, s) => sum + Number(s.total), 0);
+  const totalReturned = ordered.reduce((sum, s) => sum + Number(s.amount_credited), 0);
+  const netBilled = ordered.reduce((sum, s) => sum + Number(s.net_total), 0);
   const totalPaid = ordered.reduce((sum, s) => sum + Number(s.amount_paid), 0);
-  const outstanding = ordered.reduce((sum, s) => sum + Number(s.balance), 0);
+  const outstanding = ordered.reduce((sum, s) => sum + Number(s.receivable), 0);
+  const refundsDue = ordered.reduce((sum, s) => sum + Number(s.refund_due), 0);
 
   return (
     <div className="page-container">
@@ -67,33 +70,44 @@ const CustomerStatement = () => {
         {ordered.length === 0 ? (
           <p style={{ marginTop: "20px", color: "var(--ink-600)" }}>No transactions yet.</p>
         ) : (
-          <table className="glass-table invoice-table" style={{ marginTop: "20px" }}>
-            <thead>
-              <tr>
-                <th>Date</th><th>Invoice</th>
-                <th style={{ textAlign: "right" }}>Billed</th>
-                <th style={{ textAlign: "right" }}>Paid</th>
-                <th style={{ textAlign: "right" }}>Balance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ordered.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.date}</td>
-                  <td>{s.invoice_number}</td>
-                  <td style={{ textAlign: "right" }}>{formatNaira(s.total)}</td>
-                  <td style={{ textAlign: "right" }}>{formatNaira(s.amount_paid)}</td>
-                  <td style={{ textAlign: "right" }}>{formatNaira(s.balance)}</td>
+          <div style={{ marginTop: "20px", overflowX: "auto" }}>
+            <table className="glass-table invoice-table">
+              <thead>
+                <tr>
+                  <th>Date</th><th>Invoice</th>
+                  <th style={{ textAlign: "right" }}>Original</th>
+                  <th style={{ textAlign: "right" }}>Returned</th>
+                  <th style={{ textAlign: "right" }}>Net</th>
+                  <th style={{ textAlign: "right" }}>Paid</th>
+                  <th style={{ textAlign: "right" }}>Customer owes</th>
+                  <th style={{ textAlign: "right" }}>Refund due</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {ordered.map((s) => (
+                  <tr key={s.id}>
+                    <td>{s.date}</td>
+                    <td>{s.invoice_number}<br /><small>{invoiceStatusLabel(s)}</small></td>
+                    <td style={{ textAlign: "right" }}>{formatNaira(s.total)}</td>
+                    <td style={{ textAlign: "right" }}>{formatNaira(s.amount_credited)}</td>
+                    <td style={{ textAlign: "right" }}>{formatNaira(s.net_total)}</td>
+                    <td style={{ textAlign: "right" }}>{formatNaira(s.amount_paid)}</td>
+                    <td style={{ textAlign: "right" }}>{formatNaira(s.receivable)}</td>
+                    <td style={{ textAlign: "right" }}>{formatNaira(s.refund_due)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         <dl className="sale-totals invoice-totals">
           <div><dt>Total billed</dt><dd>{formatNaira(totalBilled)}</dd></div>
+          <div><dt>Total returned</dt><dd>− {formatNaira(totalReturned)}</dd></div>
+          <div><dt>Net billed</dt><dd>{formatNaira(netBilled)}</dd></div>
           <div><dt>Total paid</dt><dd>{formatNaira(totalPaid)}</dd></div>
-          <div className="sale-totals__grand"><dt>Outstanding</dt><dd>{formatNaira(outstanding)}</dd></div>
+          <div className="sale-totals__grand"><dt>Customer owes</dt><dd>{formatNaira(outstanding)}</dd></div>
+          <div className="sale-totals__grand"><dt>Refunds due</dt><dd>{formatNaira(refundsDue)}</dd></div>
         </dl>
         <p className="invoice-foot">Thank you for your business.</p>
       </section>

@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 import api from "../../../services/api";
 import useAutoRefresh from "../../../hooks/useAutoRefresh";
 import PageHeader from "../../../components/ui/PageHeader";
-import { type Sale, formatNaira, statusLabel } from "../salesTypes";
+import { type Sale, formatNaira, invoiceStatusLabel } from "../salesTypes";
 import { offlineDb } from "../../../offline/db";
 import { SYNC_EVENT } from "../../../offline/sync";
 import type { QueuedSale } from "../../../offline/types";
@@ -16,12 +16,19 @@ interface OperationsSummary {
   low_stock_count: number;
   inventory_attention_count: number;
   outstanding_total: string;
+  refunds_due_total: string;
 }
 
 const statusColor: Record<string, string> = {
   paid: "var(--brand)",
   partial: "var(--amber)",
   pending: "var(--danger)",
+};
+
+const invoiceStatusColor = (sale: Sale) => {
+  if (sale.return_status === "full") return "var(--brand)";
+  if (sale.return_status === "partial") return "var(--amber)";
+  return statusColor[sale.payment_status];
 };
 
 const SalesList = () => {
@@ -74,6 +81,7 @@ const SalesList = () => {
           <div><span>Cash</span><strong>{formatNaira(summary.payments.cash)}</strong><small>Transfer {formatNaira(summary.payments.transfer)} · POS {formatNaira(summary.payments.pos)}</small></div>
           <div><span>Stock attention</span><strong>{summary.low_stock_count + summary.inventory_attention_count}</strong><small>{summary.low_stock_count} low · {summary.inventory_attention_count} conflicts</small></div>
           <div><span>Customers owe</span><strong>{formatNaira(summary.outstanding_total)}</strong><small>Across unpaid invoices</small></div>
+          <div><span>Refunds due</span><strong>{formatNaira(summary.refunds_due_total)}</strong><small>Owed back after returns</small></div>
         </section>
       )}
 
@@ -115,12 +123,20 @@ const SalesList = () => {
                   <div className="inventory-list__name">
                     <span>{s.invoice_number}</span>
                     <span className="customer-chip">{s.customer_name}</span>
-                    <span style={{ color: statusColor[s.payment_status], fontWeight: 750, fontSize: ".78rem" }}>
-                      {statusLabel(s.payment_status)}
+                    <span style={{ color: invoiceStatusColor(s), fontWeight: 750, fontSize: ".78rem" }}>
+                      {invoiceStatusLabel(s)}
                     </span>
+                    {Number(s.refund_due) > 0 && (
+                      <span style={{ color: "var(--danger)", fontWeight: 750, fontSize: ".78rem" }}>
+                        Refund due
+                      </span>
+                    )}
                   </div>
                   <span className="inventory-list__open">
-                    {formatNaira(s.total)}{Number(s.balance) > 0 ? ` · ${formatNaira(s.balance)} due` : ""}
+                    {formatNaira(s.return_status === "none" ? s.total : s.net_total)}
+                    {s.return_status !== "none" ? " net" : ""}
+                    {Number(s.receivable) > 0 ? ` · ${formatNaira(s.receivable)} due` : ""}
+                    {Number(s.refund_due) > 0 ? ` · ${formatNaira(s.refund_due)} refund` : ""}
                   </span>
                 </div>
               </li>

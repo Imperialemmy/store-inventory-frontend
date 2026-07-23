@@ -41,8 +41,12 @@ export interface Sale {
   total: string;
   amount_paid: string;
   amount_credited: string;
+  net_total: string;
+  receivable: string;
+  refund_due: string;
   balance: string;
   payment_status: "pending" | "partial" | "paid";
+  return_status: "none" | "partial" | "full";
   notes: string | null;
   items: SaleItem[];
   payments: Payment[];
@@ -61,3 +65,11 @@ export const formatNaira = (value: string | number) =>
 
 export const statusLabel = (status: Sale["payment_status"]) =>
   ({ pending: "Unpaid", partial: "Part-paid", paid: "Paid" }[status] ?? status);
+
+export const invoiceStatusLabel = (
+  sale: Pick<Sale, "payment_status" | "return_status">,
+) => {
+  if (sale.return_status === "full") return "Returned";
+  if (sale.return_status === "partial") return "Partially returned";
+  return statusLabel(sale.payment_status);
+};
