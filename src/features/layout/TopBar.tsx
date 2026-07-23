@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Menu, Search, Bell, AlertTriangle, Clock, PackageX } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { Menu, Bell, AlertTriangle, Clock, PackageX } from "lucide-react";
 import api from "../../services/api";
 import { useUserRole } from "../../hooks/useUserRole";
 import ThemeToggle from "../../components/ThemeToggle";
@@ -22,9 +22,7 @@ const typeIcon = {
 };
 
 const TopBar = ({ onMenu }: TopBarProps) => {
-  const navigate = useNavigate();
   const { role, username } = useUserRole();
-  const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [alerts, setAlerts] = useState<NotificationItem[]>([]);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -46,27 +44,11 @@ const TopBar = ({ onMenu }: TopBarProps) => {
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
 
-  const handleSearch = (e: FormEvent) => {
-    e.preventDefault();
-    const q = query.trim();
-    if (q) navigate(`/products?q=${encodeURIComponent(q)}`);
-  };
-
   return (
     <header className="topbar">
       <button className="topbar__menu" onClick={onMenu} aria-label="Open menu" type="button">
         <Menu size={22} />
       </button>
-
-      <form className="topbar__search" onSubmit={handleSearch}>
-        <Search size={18} />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search customer, product…"
-          aria-label="Search"
-        />
-      </form>
 
       <div className="topbar__spacer" />
 
