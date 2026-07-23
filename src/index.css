@@ -299,6 +299,14 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .glass-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-md); }
 .modal-overlay { background: rgba(20,34,46,.4); }
 
+/* Confirmation dialog */
+.confirm-overlay { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 20px; backdrop-filter: blur(2px); }
+.confirm-card { width: min(100%, 400px); padding: 22px; border-radius: 16px; box-shadow: var(--shadow-md); }
+.confirm-card__title { margin: 0 0 8px; color: var(--ink-900); font-size: 1.15rem; }
+.confirm-card__body { color: var(--ink-700); font-size: .92rem; line-height: 1.5; }
+.confirm-card__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.confirm-card__actions .button { min-height: 44px; }
+
 /* ---------------- Stat cards ---------------- */
 .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
 .stat-card { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 20px; }

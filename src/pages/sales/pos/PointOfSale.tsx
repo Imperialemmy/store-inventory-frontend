@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import { formatNaira } from "../salesTypes";
 import { createUuid, getDeviceId, offlineDb } from "../../../offline/db";
 import { syncPendingSales } from "../../../offline/sync";
@@ -42,6 +43,7 @@ const PointOfSale = () => {
   const [cartOpen, setCartOpen] = useState(false);
   const [addingCustomer, setAddingCustomer] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const comboRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -236,11 +238,20 @@ const PointOfSale = () => {
     }
   };
 
-  const completeSale = async () => {
+  // Validate, then ask for confirmation before recording.
+  const requestComplete = () => {
     setError(null);
     setSuccess(null);
     if (!customerId || !customer) return setError("Pick a customer, or tick Walk-in customer.");
     if (cart.length === 0) return setError("Add at least one product.");
+    setConfirmOpen(true);
+  };
+
+  const completeSale = async () => {
+    if (!customerId || !customer) return;
+    setConfirmOpen(false);
+    setError(null);
+    setSuccess(null);
     setSaving(true);
     try {
       const timestamp = new Date().toISOString();
@@ -363,7 +374,7 @@ const PointOfSale = () => {
             <dd>{formatNaira(total)}</dd>
           </div>
         </dl>
-        <button className="button button--primary pos-record" onClick={completeSale} disabled={saving || cart.length === 0}>
+        <button className="button button--primary pos-record" onClick={requestComplete} disabled={saving || cart.length === 0}>
           <ShoppingCart size={18} />
           {saving ? "Saving on this device…" : `Record sale · ${formatNaira(total)}`}
         </button>
@@ -511,6 +522,22 @@ const PointOfSale = () => {
           <small>Review sale</small>
         </button>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Complete this sale?"
+        message={
+          <>
+            <strong>{itemCount} item{itemCount === 1 ? "" : "s"}</strong> for{" "}
+            <strong>{customer?.name}</strong> — total <strong>{formatNaira(total)}</strong>
+            {" "}({paymentMethod === "pay_later" ? "pay later" : paymentMethod}).
+          </>
+        }
+        confirmLabel="Yes, record sale"
+        busy={saving}
+        onConfirm={() => void completeSale()}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 };
