@@ -38,6 +38,7 @@ const CustomerStatement = () => {
   const totalReturned = ordered.reduce((sum, s) => sum + Number(s.amount_credited), 0);
   const netBilled = ordered.reduce((sum, s) => sum + Number(s.net_total), 0);
   const totalPaid = ordered.reduce((sum, s) => sum + Number(s.amount_paid), 0);
+  const totalRefunded = ordered.reduce((sum, s) => sum + Number(s.amount_refunded), 0);
   const outstanding = ordered.reduce((sum, s) => sum + Number(s.receivable), 0);
   const refundsDue = ordered.reduce((sum, s) => sum + Number(s.refund_due), 0);
 
@@ -79,6 +80,7 @@ const CustomerStatement = () => {
                   <th style={{ textAlign: "right" }}>Returned</th>
                   <th style={{ textAlign: "right" }}>Net</th>
                   <th style={{ textAlign: "right" }}>Paid</th>
+                  <th style={{ textAlign: "right" }}>Refunded</th>
                   <th style={{ textAlign: "right" }}>Customer owes</th>
                   <th style={{ textAlign: "right" }}>Refund due</th>
                 </tr>
@@ -92,6 +94,7 @@ const CustomerStatement = () => {
                     <td style={{ textAlign: "right" }}>{formatNaira(s.amount_credited)}</td>
                     <td style={{ textAlign: "right" }}>{formatNaira(s.net_total)}</td>
                     <td style={{ textAlign: "right" }}>{formatNaira(s.amount_paid)}</td>
+                    <td style={{ textAlign: "right" }}>{formatNaira(s.amount_refunded)}</td>
                     <td style={{ textAlign: "right" }}>{formatNaira(s.receivable)}</td>
                     <td style={{ textAlign: "right" }}>{formatNaira(s.refund_due)}</td>
                   </tr>
@@ -106,6 +109,7 @@ const CustomerStatement = () => {
           <div><dt>Total returned</dt><dd>− {formatNaira(totalReturned)}</dd></div>
           <div><dt>Net billed</dt><dd>{formatNaira(netBilled)}</dd></div>
           <div><dt>Total paid</dt><dd>{formatNaira(totalPaid)}</dd></div>
+          <div><dt>Total refunded</dt><dd>− {formatNaira(totalRefunded)}</dd></div>
           <div className="sale-totals__grand"><dt>Customer owes</dt><dd>{formatNaira(outstanding)}</dd></div>
           <div className="sale-totals__grand"><dt>Refunds due</dt><dd>{formatNaira(refundsDue)}</dd></div>
         </dl>

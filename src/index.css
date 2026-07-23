@@ -263,6 +263,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .notice { margin-bottom: 20px; padding: 12px 14px; border-radius: var(--radius-sm); font-size: .88rem; font-weight: 600; }
 .notice--success { color: #15532f; background: #e6f3ea; border: 1px solid #c4e2ce; }
 .notice--error { color: #8a3421; background: var(--danger-soft); border: 1px solid #f0c8ba; }
+.refund-settlement { margin-top: 4px; padding: 18px; border: 1px solid #e6d39d; border-radius: var(--radius-sm); background: var(--amber-soft); }
+.refund-settlement__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 16px; }
+.refund-settlement__head p { margin: 4px 0 0; color: var(--ink-700); font-size: .86rem; line-height: 1.45; }
+.refund-settlement__amount { flex: 0 0 auto; color: var(--ink-900); font-size: 1.25rem; font-weight: 800; }
+.refund-settlement .form-actions { border-color: #e6d39d; }
 
 /* ---------------- Lists ---------------- */
 .page-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; }
@@ -509,6 +514,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .local-sales > div { grid-template-columns: 1fr auto; }
   .local-sales > div > strong { grid-column: 2; grid-row: 1; }
   .local-sale-state { grid-column: 1 / -1; width: fit-content; }
+  .refund-settlement__head { flex-direction: column; gap: 8px; }
 }
 
 .print-only { display: none; }

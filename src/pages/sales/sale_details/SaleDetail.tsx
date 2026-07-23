@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Printer } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import ConfirmDialog from "../../../components/ConfirmDialog";
@@ -20,6 +20,14 @@ const SaleDetail = () => {
   const [payError, setPayError] = useState<string | null>(null);
   const [savingPay, setSavingPay] = useState(false);
 
+  const [refundAmount, setRefundAmount] = useState("");
+  const [refundMethod, setRefundMethod] = useState("cash");
+  const [refundReference, setRefundReference] = useState("");
+  const [refundError, setRefundError] = useState<string | null>(null);
+  const [refundSuccess, setRefundSuccess] = useState<string | null>(null);
+  const [savingRefund, setSavingRefund] = useState(false);
+  const [confirmRefundOpen, setConfirmRefundOpen] = useState(false);
+
   const [returnQty, setReturnQty] = useState<Record<number, string>>({});
   const [returnReason, setReturnReason] = useState("");
   const [returnError, setReturnError] = useState<string | null>(null);
@@ -32,6 +40,7 @@ const SaleDetail = () => {
       setLoading(true);
       const res = await api.get<Sale>(`/sales/${saleId}/`);
       setSale(res.data);
+      setRefundAmount((current) => current || (Number(res.data.refund_due) > 0 ? res.data.refund_due : ""));
     } catch (error) {
       console.error("Failed to fetch sale:", error);
     } finally {
@@ -57,6 +66,55 @@ const SaleDetail = () => {
       setPayError("Could not record the payment.");
     } finally {
       setSavingPay(false);
+    }
+  };
+
+  const handleBack = () => {
+    const historyIndex = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+    if (historyIndex > 0) navigate(-1);
+    else navigate("/sales/invoices");
+  };
+
+  const requestRefund = (event: FormEvent) => {
+    event.preventDefault();
+    setRefundError(null);
+    setRefundSuccess(null);
+    const requested = Number(refundAmount);
+    if (!refundAmount || requested <= 0) return setRefundError("Enter a valid refund amount.");
+    if (requested > Number(sale?.refund_due ?? 0)) {
+      return setRefundError(`Refund cannot exceed ${formatNaira(sale?.refund_due ?? 0)}.`);
+    }
+    setConfirmRefundOpen(true);
+  };
+
+  const submitRefund = async () => {
+    setConfirmRefundOpen(false);
+    setSavingRefund(true);
+    setRefundError(null);
+    try {
+      await api.post("/refunds/", {
+        sale: Number(saleId),
+        amount: refundAmount,
+        method: refundMethod,
+        reference: refundReference || null,
+      });
+      const recordedAmount = refundAmount;
+      setRefundAmount("");
+      setRefundReference("");
+      await fetchSale();
+      setRefundSuccess(`${formatNaira(recordedAmount)} refund recorded.`);
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: unknown } })?.response?.data;
+      let message = "Could not record the refund.";
+      if (Array.isArray(detail) && detail.length > 0) message = String(detail[0]);
+      else if (detail && typeof detail === "object") {
+        const first = Object.values(detail)[0];
+        if (Array.isArray(first) && first.length > 0) message = String(first[0]);
+        else if (typeof first === "string") message = first;
+      }
+      setRefundError(message);
+    } finally {
+      setSavingRefund(false);
     }
   };
 
@@ -130,6 +188,9 @@ const SaleDetail = () => {
         description={`${sale.customer_name} · ${invoiceStatusLabel(sale)}${Number(sale.refund_due) > 0 ? ` · ${formatNaira(sale.refund_due)} refund due` : ""}`}
         action={
           <div className="page-actions no-print">
+            <button className="button button--ghost" type="button" onClick={handleBack}>
+              <ArrowLeft size={16} /> Back
+            </button>
             <button className="button button--ghost" onClick={() => window.print()}>
               <Printer size={16} /> Print / PDF
             </button>
@@ -192,6 +253,9 @@ const SaleDetail = () => {
             <div className="sale-totals__grand"><dt>Net sale</dt><dd>{formatNaira(sale.net_total)}</dd></div>
           )}
           <div><dt>Paid</dt><dd>{formatNaira(sale.amount_paid)}</dd></div>
+          {Number(sale.amount_refunded) > 0 && (
+            <div><dt>Refunded</dt><dd>− {formatNaira(sale.amount_refunded)}</dd></div>
+          )}
           {Number(sale.refund_due) > 0 ? (
             <div className="sale-totals__grand"><dt>Refund due</dt><dd>{formatNaira(sale.refund_due)}</dd></div>
           ) : Number(sale.receivable) === 0 ? (
@@ -256,6 +320,70 @@ const SaleDetail = () => {
           </form>
         )}
       </section>
+
+      {/* Refund settlement and audit history (not printed) */}
+      {(Number(sale.refund_due) > 0 || Number(sale.amount_refunded) > 0) && (
+        <section className="surface form-card no-print" style={{ marginTop: "18px" }}>
+          <h3 style={{ marginTop: 0, color: "var(--leaf-950)" }}>Refunds</h3>
+
+          {refundSuccess && <div className="notice notice--success" role="status">{refundSuccess}</div>}
+          {refundError && <div className="notice notice--error" role="alert">{refundError}</div>}
+
+          {sale.refunds.length > 0 && (
+            <table className="glass-table" style={{ marginBottom: "18px" }}>
+              <thead>
+                <tr><th>Date</th><th>Method</th><th>Reference</th><th>Recorded by</th><th style={{ textAlign: "right" }}>Amount</th></tr>
+              </thead>
+              <tbody>
+                {sale.refunds.map((refund) => (
+                  <tr key={refund.id}>
+                    <td>{refund.date}</td>
+                    <td>{refund.method_display}</td>
+                    <td>{refund.reference || "—"}</td>
+                    <td>{refund.recorded_by || "—"}</td>
+                    <td style={{ textAlign: "right" }}>{formatNaira(refund.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {Number(sale.refund_due) > 0 && userRole.canSell ? (
+            <form className="refund-settlement" onSubmit={requestRefund}>
+              <div className="refund-settlement__head">
+                <div>
+                  <strong>Refund to settle</strong>
+                  <p>Record the money paid back to the customer. The refund due tag clears when the full amount is settled.</p>
+                </div>
+                <span className="refund-settlement__amount">{formatNaira(sale.refund_due)}</span>
+              </div>
+              <div className="form-grid sale-summary__inputs">
+                <label className="field">
+                  <span>Amount (₦)</span>
+                  <input type="number" min="0.01" max={sale.refund_due} step="0.01" value={refundAmount} onChange={(e) => setRefundAmount(e.target.value)} />
+                </label>
+                <label className="field">
+                  <span>Method</span>
+                  <select value={refundMethod} onChange={(e) => setRefundMethod(e.target.value)}>
+                    {PAYMENT_METHODS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                  </select>
+                </label>
+                <label className="field">
+                  <span>Reference</span>
+                  <input value={refundReference} onChange={(e) => setRefundReference(e.target.value)} placeholder="Optional receipt or transfer ID" />
+                </label>
+              </div>
+              <div className="form-actions">
+                <button className="button button--accent" type="submit" disabled={savingRefund}>
+                  {savingRefund ? "Saving…" : "Record refund"}
+                </button>
+              </div>
+            </form>
+          ) : Number(sale.refund_due) === 0 && sale.refunds.length > 0 ? (
+            <div className="notice notice--success" role="status">Refund settled in full. No money remains due to the customer.</div>
+          ) : null}
+        </section>
+      )}
 
       {/* Returns / credit notes (not printed) */}
       <section className="surface form-card no-print" style={{ marginTop: "18px" }}>
@@ -335,6 +463,20 @@ const SaleDetail = () => {
           sale.credit_notes.length === 0 && <p style={{ color: "var(--ink-600)" }}>No returns recorded.</p>
         )}
       </section>
+      <ConfirmDialog
+        open={confirmRefundOpen}
+        title="Record this refund?"
+        message={
+          <>
+            Pay <strong>{formatNaira(refundAmount || 0)}</strong> back to <strong>{sale.customer_name}</strong> via{" "}
+            <strong>{PAYMENT_METHODS.find((item) => item.value === refundMethod)?.label}</strong>. This will reduce the refund due on {sale.invoice_number}.
+          </>
+        }
+        confirmLabel="Yes, record refund"
+        busy={savingRefund}
+        onConfirm={() => void submitRefund()}
+        onCancel={() => setConfirmRefundOpen(false)}
+      />
       <ConfirmDialog
         open={confirmReturnOpen}
         title="Record this return?"

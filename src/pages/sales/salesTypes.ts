@@ -27,6 +27,18 @@ export interface Payment {
   date: string;
 }
 
+export interface Refund {
+  id: number;
+  sale: number;
+  amount: string;
+  method: string;
+  method_display: string;
+  reference: string | null;
+  date: string;
+  recorded_by: string | null;
+  created_at: string;
+}
+
 export interface Sale {
   id: number;
   invoice_number: string;
@@ -40,6 +52,7 @@ export interface Sale {
   vat_amount: string;
   total: string;
   amount_paid: string;
+  amount_refunded: string;
   amount_credited: string;
   net_total: string;
   receivable: string;
@@ -50,6 +63,7 @@ export interface Sale {
   notes: string | null;
   items: SaleItem[];
   payments: Payment[];
+  refunds: Refund[];
   credit_notes: CreditNote[];
   created_at: string;
 }
