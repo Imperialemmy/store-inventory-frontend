@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Printer } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import { useUserRole } from "../../../hooks/useUserRole";
 import { type Sale, PAYMENT_METHODS, formatNaira, statusLabel } from "../salesTypes";
 
 const SaleDetail = () => {
   const { saleId } = useParams<{ saleId: string }>();
+  const navigate = useNavigate();
   const userRole = useUserRole();
   const [sale, setSale] = useState<Sale | null>(null);
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,7 @@ const SaleDetail = () => {
   const [returnError, setReturnError] = useState<string | null>(null);
   const [returnSuccess, setReturnSuccess] = useState<string | null>(null);
   const [savingReturn, setSavingReturn] = useState(false);
+  const [confirmReturnOpen, setConfirmReturnOpen] = useState(false);
 
   const fetchSale = useCallback(async () => {
     try {
@@ -57,31 +60,44 @@ const SaleDetail = () => {
     }
   };
 
-  const handleReturn = async (event: FormEvent) => {
-    event.preventDefault();
-    setReturnError(null);
-    setReturnSuccess(null);
-    if (!sale) return;
-
+  // Gather the requested return lines and validate them against what's still
+  // returnable, so the user gets an immediate, specific message.
+  const collectReturn = (): { items?: { sale_item: number; quantity: number }[]; totalUnits?: number; error?: string } => {
+    if (!sale) return { error: "Sale not loaded." };
     const items = Object.entries(returnQty)
       .map(([saleItem, qty]) => ({ sale_item: Number(saleItem), quantity: Number(qty) }))
       .filter((row) => row.quantity > 0);
-    if (items.length === 0) return setReturnError("Enter how many units to return.");
-
-    // Validate up front against what's still returnable so the user gets an
-    // immediate, specific message instead of a generic server error.
+    if (items.length === 0) return { error: "Enter how many units to return." };
     for (const row of items) {
       const line = sale.items.find((i) => i.id === row.sale_item);
       const returnable = line ? line.quantity - (line.returned_quantity ?? 0) : 0;
       if (!Number.isInteger(row.quantity) || row.quantity < 0) {
-        return setReturnError("Return quantities must be whole numbers.");
+        return { error: "Return quantities must be whole numbers." };
       }
       if (row.quantity > returnable) {
-        return setReturnError(`You can return at most ${returnable} × ${line?.product_name}.`);
+        return { error: `You can return at most ${returnable} × ${line?.product_name}.` };
       }
     }
+    return { items, totalUnits: items.reduce((sum, row) => sum + row.quantity, 0) };
+  };
 
-    const totalUnits = items.reduce((sum, row) => sum + row.quantity, 0);
+  const returnUnits = Object.values(returnQty).reduce((sum, v) => sum + (Number(v) || 0), 0);
+
+  // Step 1: validate and ask for confirmation.
+  const requestReturn = (event: FormEvent) => {
+    event.preventDefault();
+    setReturnError(null);
+    setReturnSuccess(null);
+    const { error } = collectReturn();
+    if (error) return setReturnError(error);
+    setConfirmReturnOpen(true);
+  };
+
+  // Step 2: confirmed — record it, verify, then go back to the invoices list.
+  const submitReturn = async () => {
+    const { items, totalUnits, error } = collectReturn();
+    setConfirmReturnOpen(false);
+    if (error || !items) return setReturnError(error ?? "Could not record the return.");
     setSavingReturn(true);
     try {
       await api.post("/credit-notes/", {
@@ -93,6 +109,8 @@ const SaleDetail = () => {
       setReturnReason("");
       await fetchSale();
       setReturnSuccess(`Return recorded — ${totalUnits} unit${totalUnits === 1 ? "" : "s"} credited and restocked.`);
+      // Let the confirmation land, then return to the invoices list.
+      setTimeout(() => navigate("/sales/invoices"), 1300);
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: unknown } })?.response?.data;
       setReturnError(Array.isArray(detail) ? String(detail[0]) : "Could not record the return.");
@@ -168,7 +186,13 @@ const SaleDetail = () => {
           {Number(sale.amount_credited) > 0 && (
             <div><dt>Credited (returns)</dt><dd>− {formatNaira(sale.amount_credited)}</dd></div>
           )}
-          <div className="sale-totals__grand"><dt>Balance due</dt><dd>{formatNaira(sale.balance)}</dd></div>
+          {Number(sale.balance) < 0 ? (
+            <div className="sale-totals__grand"><dt>Refund due</dt><dd>{formatNaira(Math.abs(Number(sale.balance)))}</dd></div>
+          ) : Number(sale.balance) === 0 ? (
+            <div className="sale-totals__grand"><dt>Balance</dt><dd>Settled</dd></div>
+          ) : (
+            <div className="sale-totals__grand"><dt>Balance due</dt><dd>{formatNaira(sale.balance)}</dd></div>
+          )}
         </dl>
 
         {sale.notes && <p className="invoice-notes">{sale.notes}</p>}
@@ -252,7 +276,7 @@ const SaleDetail = () => {
         )}
 
         {userRole.canSell && sale.items.some((i) => i.quantity - (i.returned_quantity ?? 0) > 0) ? (
-          <form onSubmit={handleReturn}>
+          <form onSubmit={requestReturn}>
             {returnError && <div className="notice notice--error" role="alert">{returnError}</div>}
             <table className="glass-table" style={{ marginBottom: "14px" }}>
               <thead>
@@ -305,6 +329,20 @@ const SaleDetail = () => {
           sale.credit_notes.length === 0 && <p style={{ color: "var(--ink-600)" }}>No returns recorded.</p>
         )}
       </section>
+      <ConfirmDialog
+        open={confirmReturnOpen}
+        title="Record this return?"
+        message={
+          <>
+            Returning <strong>{returnUnits} unit{returnUnits === 1 ? "" : "s"}</strong> on{" "}
+            <strong>{sale.invoice_number}</strong>. The stock goes back and the customer is credited.
+          </>
+        }
+        confirmLabel="Yes, record return"
+        busy={savingReturn}
+        onConfirm={() => void submitReturn()}
+        onCancel={() => setConfirmReturnOpen(false)}
+      />
     </div>
   );
 };
