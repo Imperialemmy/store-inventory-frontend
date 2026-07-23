@@ -170,15 +170,15 @@ const PointOfSale = () => {
       .slice(0, 18);
   }, [products, productQuery, productUsage]);
 
-  const addToCart = (product: CachedProduct) => {
+  // Clicking a product toggles whether it's in the sale. The amount is then
+  // adjusted in the cart. Clicking a selected product again removes it and
+  // resets its quantity.
+  const toggleProduct = (product: CachedProduct) => {
     setSuccess(null);
     setCart((previous) => {
       const existing = previous.find((line) => line.product.id === product.id);
       if (existing) {
-        if (existing.quantity >= product.stock) return previous;
-        return previous.map((line) => line.product.id === product.id
-          ? { ...line, quantity: line.quantity + 1 }
-          : line);
+        return previous.filter((line) => line.product.id !== product.id);
       }
       return [...previous, { product, quantity: 1 }];
     });
@@ -428,10 +428,10 @@ const PointOfSale = () => {
           ) : (
             <div className="pos-products">
               {filtered.map((product) => {
-                const inCart = cartQty(product.id);
+                const selected = cartQty(product.id) > 0;
                 return (
-                  <button key={product.id} className={`pos-product${inCart > 0 ? " pos-product--selected" : ""}`} onClick={() => addToCart(product)} type="button" disabled={product.stock <= 0}>
-                    {inCart > 0 && <span className="pos-product__count" aria-label={`${inCart} in cart`}>{inCart}</span>}
+                  <button key={product.id} className={`pos-product${selected ? " pos-product--selected" : ""}`} onClick={() => toggleProduct(product)} type="button" disabled={product.stock <= 0} aria-pressed={selected}>
+                    {selected && <span className="pos-product__check" aria-label="Selected"><CheckCircle2 size={20} /></span>}
                     {product.image ? (
                       <img src={product.image} alt="" />
                     ) : (

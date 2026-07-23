@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, Plus, Package, X, Trash2 } from "lucide-react";
 import api from "../../services/api";
 import { useUserRole } from "../../hooks/useUserRole";
+import useAutoRefresh from "../../hooks/useAutoRefresh";
 
 interface Product {
   id: number;
@@ -36,16 +37,17 @@ const ProductsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const popRef = useRef<HTMLDivElement>(null);
 
-  const load = () => {
+  const load = useCallback(() => {
     api.get("/products/")
       .then((res) => setProducts(res.data.results || res.data))
       .catch((err) => console.error("Error fetching products:", err))
       .finally(() => setLoading(false));
-  };
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
+  useAutoRefresh(load);
 
   useEffect(() => {
     if (!open) return;

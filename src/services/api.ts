@@ -2,6 +2,9 @@ import axios, { type InternalAxiosRequestConfig } from "axios";
 
 interface RetryableRequest extends InternalAxiosRequestConfig {
   _retry?: boolean;
+  // Background traffic (heartbeat, auto-refresh) that should not flash the
+  // global loading bar.
+  _background?: boolean;
 }
 
 interface RefreshResponse {
@@ -28,7 +31,7 @@ const endActivity = () => { activeRequests = Math.max(0, activeRequests - 1); em
 
 api.interceptors.request.use(
   (config) => {
-    startActivity();
+    if (!(config as RetryableRequest)._background) startActivity();
     const token = localStorage.getItem("access_token");
 
     if (token) {
@@ -49,11 +52,11 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
-    endActivity();
+    if (!(response.config as RetryableRequest)._background) endActivity();
     return response;
   },
   async (error) => {
-    endActivity();
+    if (!(error.config as RetryableRequest | undefined)?._background) endActivity();
     const request = error.config as RetryableRequest | undefined;
     const refreshToken = localStorage.getItem("refresh_token");
 
