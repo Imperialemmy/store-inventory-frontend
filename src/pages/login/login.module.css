@@ -20,7 +20,7 @@
 }
 .heroBrand { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
 .heroLogo { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,.16); }
-.heroName { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 1.7rem; line-height: 1; }
+.heroName { font-weight: 800; letter-spacing: -.02em; font-size: 1.5rem; line-height: 1; }
 .heroCopy { position: relative; z-index: 1; }
 .heroCopy h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 800; letter-spacing: -.03em; line-height: 1.04; max-width: 12ch; }
 .heroCopy p { margin: 14px 0 0; max-width: 42ch; color: #d6e4f2; font-size: 1.02rem; line-height: 1.6; }

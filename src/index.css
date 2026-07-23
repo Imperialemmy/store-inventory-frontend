@@ -108,7 +108,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 }
 .sidebar__brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 20px; text-decoration: none; }
 .sidebar__brand-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--brand); color: #fff; }
-.sidebar__brand-text { font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 1.34rem; color: var(--ink-900); line-height: 1; }
+.sidebar__brand-text { font-family: inherit; font-weight: 800; letter-spacing: -.02em; font-size: 1.1rem; color: var(--brand-strong); line-height: 1; white-space: nowrap; }
 .sidebar__nav { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
 .sidebar__item {
   display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 12px;
@@ -419,7 +419,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 /* ---------------- Invoice sheet ---------------- */
 .invoice-sheet { padding: clamp(22px, 4vw, 40px); }
 .invoice-head { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding-bottom: 20px; border-bottom: 2px solid var(--brand); }
-.invoice-brand { margin: 0; color: var(--ink-900); font-family: "Brush Script MT", "Segoe Script", cursive; font-size: 1.9rem; }
+.invoice-brand { margin: 0; color: var(--brand-strong); font-family: inherit; font-weight: 800; letter-spacing: -.02em; font-size: 1.6rem; }
 .invoice-brand__sub { margin: 4px 0 0; color: var(--ink-600); font-size: .85rem; }
 .invoice-meta { display: grid; gap: 6px; text-align: right; }
 .invoice-meta div { display: grid; }
