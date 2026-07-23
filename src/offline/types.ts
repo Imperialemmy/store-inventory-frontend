@@ -1,6 +1,7 @@
 export interface CachedProduct {
   id: number;
   name: string;
+  category?: string;
   image: string | null;
   price: string;
   stock: number;
