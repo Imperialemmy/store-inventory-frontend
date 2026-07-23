@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import api from "../../../services/api";
+import useAutoRefresh from "../../../hooks/useAutoRefresh";
 import PageHeader from "../../../components/ui/PageHeader";
 import { type Sale, formatNaira, statusLabel } from "../salesTypes";
 import { offlineDb } from "../../../offline/db";
@@ -31,7 +32,7 @@ const SalesList = () => {
   const [localSales, setLocalSales] = useState<QueuedSale[]>([]);
   const [summary, setSummary] = useState<OperationsSummary | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     api.get("/sales/?page_size=200")
       .then((res) => setSales(res.data.results || res.data))
       .catch((err) => console.error("Error fetching sales:", err))
@@ -40,6 +41,9 @@ const SalesList = () => {
       .then((res) => setSummary(res.data))
       .catch(() => setSummary(null));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   useEffect(() => {
     const loadLocal = () => {

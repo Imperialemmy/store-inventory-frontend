@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Plus } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import { useUserRole } from "../../../hooks/useUserRole";
+import useAutoRefresh from "../../../hooks/useAutoRefresh";
 import { type Customer } from "../customerTypes";
 
 const CustomerList = () => {
@@ -13,12 +14,15 @@ const CustomerList = () => {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     api.get("/customers/?page_size=1000")
       .then((res) => setCustomers(res.data.results || res.data))
       .catch((err) => console.error("Error fetching customers:", err))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();

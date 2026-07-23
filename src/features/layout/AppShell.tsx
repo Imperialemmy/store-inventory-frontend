@@ -5,10 +5,12 @@ import TopBar from "./TopBar";
 import { sidebarNavigation, activeGroupKey, activeSubTo } from "../../config/navigation";
 import SyncStatus from "../../offline/SyncStatus";
 import GlobalLoadingBar from "../../components/GlobalLoadingBar";
+import useHeartbeat from "../../hooks/useHeartbeat";
 
 const AppShell = () => {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  useHeartbeat();
 
   const activeKey = activeGroupKey(location.pathname);
   const activeGroup = sidebarNavigation.find((g) => g.key === activeKey);
