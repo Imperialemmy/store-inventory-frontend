@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Printer } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
@@ -8,7 +8,6 @@ import { type Sale, PAYMENT_METHODS, formatNaira, statusLabel } from "../salesTy
 
 const SaleDetail = () => {
   const { saleId } = useParams<{ saleId: string }>();
-  const navigate = useNavigate();
   const userRole = useUserRole();
   const [sale, setSale] = useState<Sale | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,6 +21,7 @@ const SaleDetail = () => {
   const [returnQty, setReturnQty] = useState<Record<number, string>>({});
   const [returnReason, setReturnReason] = useState("");
   const [returnError, setReturnError] = useState<string | null>(null);
+  const [returnSuccess, setReturnSuccess] = useState<string | null>(null);
   const [savingReturn, setSavingReturn] = useState(false);
 
   const fetchSale = useCallback(async () => {
@@ -60,10 +60,28 @@ const SaleDetail = () => {
   const handleReturn = async (event: FormEvent) => {
     event.preventDefault();
     setReturnError(null);
+    setReturnSuccess(null);
+    if (!sale) return;
+
     const items = Object.entries(returnQty)
       .map(([saleItem, qty]) => ({ sale_item: Number(saleItem), quantity: Number(qty) }))
       .filter((row) => row.quantity > 0);
-    if (items.length === 0) return setReturnError("Enter a quantity to return.");
+    if (items.length === 0) return setReturnError("Enter how many units to return.");
+
+    // Validate up front against what's still returnable so the user gets an
+    // immediate, specific message instead of a generic server error.
+    for (const row of items) {
+      const line = sale.items.find((i) => i.id === row.sale_item);
+      const returnable = line ? line.quantity - (line.returned_quantity ?? 0) : 0;
+      if (!Number.isInteger(row.quantity) || row.quantity < 0) {
+        return setReturnError("Return quantities must be whole numbers.");
+      }
+      if (row.quantity > returnable) {
+        return setReturnError(`You can return at most ${returnable} × ${line?.product_name}.`);
+      }
+    }
+
+    const totalUnits = items.reduce((sum, row) => sum + row.quantity, 0);
     setSavingReturn(true);
     try {
       await api.post("/credit-notes/", {
@@ -74,21 +92,12 @@ const SaleDetail = () => {
       setReturnQty({});
       setReturnReason("");
       await fetchSale();
+      setReturnSuccess(`Return recorded — ${totalUnits} unit${totalUnits === 1 ? "" : "s"} credited and restocked.`);
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: unknown } })?.response?.data;
       setReturnError(Array.isArray(detail) ? String(detail[0]) : "Could not record the return.");
     } finally {
       setSavingReturn(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!window.confirm("Delete this sale? Stock will be returned and the customer balance updated.")) return;
-    try {
-      await api.delete(`/sales/${saleId}/`);
-      navigate("/sales");
-    } catch {
-      window.alert("Could not delete the sale.");
     }
   };
 
@@ -106,9 +115,6 @@ const SaleDetail = () => {
             <button className="button button--ghost" onClick={() => window.print()}>
               <Printer size={16} /> Print / PDF
             </button>
-            {userRole.role === "admin" && (
-              <button className="button button--danger" onClick={handleDelete}>Delete</button>
-            )}
           </div>
         }
       />
@@ -225,6 +231,8 @@ const SaleDetail = () => {
       <section className="surface form-card no-print" style={{ marginTop: "18px" }}>
         <h3 style={{ marginTop: 0, color: "var(--leaf-950)" }}>Returns</h3>
 
+        {returnSuccess && <div className="notice notice--success" role="status">{returnSuccess}</div>}
+
         {sale.credit_notes.length > 0 && (
           <table className="glass-table" style={{ marginBottom: "18px" }}>
             <thead>
@@ -265,8 +273,15 @@ const SaleDetail = () => {
                           max={returnable}
                           disabled={returnable <= 0}
                           value={returnQty[item.id!] ?? ""}
-                          onChange={(e) => setReturnQty((prev) => ({ ...prev, [item.id!]: e.target.value }))}
-                          style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--line-strong)", borderRadius: "9px", background: "#faf9f5" }}
+                          onChange={(e) => {
+                            // Clamp to what's still returnable so an over-return
+                            // can't even be typed.
+                            const raw = e.target.value;
+                            if (raw === "") return setReturnQty((prev) => ({ ...prev, [item.id!]: "" }));
+                            const clamped = Math.max(0, Math.min(returnable, Math.floor(Number(raw) || 0)));
+                            setReturnQty((prev) => ({ ...prev, [item.id!]: String(clamped) }));
+                          }}
+                          style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--line-strong)", borderRadius: "9px", background: "var(--input-bg)" }}
                         />
                       </td>
                     </tr>
