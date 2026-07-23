@@ -8,6 +8,7 @@ import useAutoRefresh from "../../hooks/useAutoRefresh";
 interface Product {
   id: number;
   name: string;
+  category: string;
   image: string | null;
   price: string;
   cost_price: string | null;
@@ -18,8 +19,12 @@ interface Product {
 const naira = (n: string | number) =>
   new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(n));
 
+// Traffic-light colour for a stock count against its reorder level.
+const stockColor = (stock: number, reorder: number) =>
+  stock <= 0 ? "var(--danger)" : stock <= reorder ? "var(--amber)" : "var(--ok)";
+
 const emptyDraft = {
-  id: 0, name: "", price: "", stock: "", reorderLevel: "5",
+  id: 0, name: "", category: "", price: "", stock: "", reorderLevel: "5",
 };
 
 const ProductsPage = () => {
@@ -64,6 +69,12 @@ const ProductsPage = () => {
     return [...matched].sort((a, b) => a.name.localeCompare(b.name));
   }, [products, query]);
 
+  // Existing categories power the form's suggestion list.
+  const categories = useMemo(
+    () => Array.from(new Set(products.map((p) => p.category).filter(Boolean))).sort(),
+    [products],
+  );
+
   const openAdd = () => {
     setDraft(emptyDraft);
     setImage(null);
@@ -75,6 +86,7 @@ const ProductsPage = () => {
     setDraft({
       id: p.id,
       name: p.name,
+      category: p.category ?? "",
       price: String(p.price),
       stock: String(p.stock),
       reorderLevel: String(p.reorder_level ?? 5),
@@ -121,6 +133,7 @@ const ProductsPage = () => {
     if (duplicate) return setError("A product with this name already exists.");
     const data = new FormData();
     data.append("name", draft.name.trim());
+    data.append("category", draft.category.trim());
     data.append("price", draft.price || "0");
     data.append("stock", draft.stock || "0");
     data.append("reorder_level", draft.reorderLevel || "5");
@@ -191,6 +204,18 @@ const ProductsPage = () => {
                   </small>
                 )}
               </label>
+              <label className="field">
+                <span>Category (optional)</span>
+                <input
+                  list="product-categories"
+                  value={draft.category}
+                  onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+                  placeholder="e.g. Pasta, Seasonings, Tomato Paste"
+                />
+                <datalist id="product-categories">
+                  {categories.map((c) => <option key={c} value={c} />)}
+                </datalist>
+              </label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <label className="field">
                   <span>Price (₦)</span>
@@ -244,11 +269,14 @@ const ProductsPage = () => {
                         <Package size={15} />
                       </span>
                     )}
-                    <span>{p.name}</span>
+                    <span style={{ display: "grid" }}>
+                      <span>{p.name}</span>
+                      {p.category && <small style={{ color: "var(--ink-600)", fontSize: ".72rem" }}>{p.category}</small>}
+                    </span>
                   </div>
                   <span style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                    <span style={{ color: p.stock <= p.reorder_level ? "var(--danger)" : "var(--ink-600)", fontSize: ".82rem", fontWeight: p.stock <= p.reorder_level ? 750 : 400 }}>
-                      Stock {p.stock}{p.stock <= p.reorder_level ? " · low" : ""}
+                    <span style={{ color: stockColor(p.stock, p.reorder_level), fontSize: ".82rem", fontWeight: p.stock <= p.reorder_level ? 750 : 400 }}>
+                      Stock {p.stock}{p.stock <= 0 ? " · out" : p.stock <= p.reorder_level ? " · low" : ""}
                     </span>
                     <strong style={{ color: "var(--ink-900)" }}>{naira(p.price)}</strong>
                   </span>

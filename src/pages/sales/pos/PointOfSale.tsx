@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Search, ShoppingCart, Plus, Minus, UserPlus, Package,
+  Search, ShoppingCart, Plus, Minus, UserPlus,
   ChevronDown, X, CheckCircle2,
 } from "lucide-react";
 import api from "../../../services/api";
@@ -19,6 +19,10 @@ import type {
 // no VAT or extra fees on top.
 const WALK_IN_NAME = "Walk-in Customer";
 
+// Traffic-light colour for a stock count against its reorder level.
+const stockColor = (stock: number, reorder = 5) =>
+  stock <= 0 ? "var(--danger)" : stock <= reorder ? "var(--amber)" : "var(--ok)";
+
 const PointOfSale = () => {
   const [customers, setCustomers] = useState<CachedCustomer[]>([]);
   const [products, setProducts] = useState<CachedProduct[]>([]);
@@ -27,6 +31,7 @@ const PointOfSale = () => {
   const [walkIn, setWalkIn] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const [productQuery, setProductQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer" | "pos" | "pay_later">("cash");
   const [productUsage, setProductUsage] = useState<Record<number, number>>({});
@@ -160,15 +165,22 @@ const PointOfSale = () => {
     setCustomerId(record.id);
   };
 
+  const productCategories = useMemo(
+    () => Array.from(new Set(products.map((p) => p.category).filter((c): c is string => !!c))).sort(),
+    [products],
+  );
+
   const filtered = useMemo(() => {
     const query = productQuery.trim().toLowerCase();
-    const list = query
-      ? products.filter((product) => product.name.toLowerCase().includes(query))
-      : products;
+    const list = products.filter((product) => {
+      if (categoryFilter && product.category !== categoryFilter) return false;
+      if (query && !product.name.toLowerCase().includes(query)) return false;
+      return true;
+    });
     return [...list]
       .sort((a, b) => (productUsage[b.id] ?? 0) - (productUsage[a.id] ?? 0) || a.name.localeCompare(b.name))
-      .slice(0, 18);
-  }, [products, productQuery, productUsage]);
+      .slice(0, 40);
+  }, [products, productQuery, categoryFilter, productUsage]);
 
   // Clicking a product toggles whether it's in the sale. The amount is then
   // adjusted in the cart. Clicking a selected product again removes it and
@@ -190,6 +202,14 @@ const PointOfSale = () => {
         ? { ...line, quantity: Math.min(line.product.stock, line.quantity + delta) }
         : line)
       .filter((line) => line.quantity > 0));
+
+  // Type an exact quantity (for bulk orders) — clamped to available stock.
+  const setQtyExact = (line: CartLine, value: string) => {
+    const parsed = value.trim() === "" ? 1 : Math.floor(Number(value));
+    const clamped = Math.max(1, Math.min(line.product.stock, Number.isFinite(parsed) ? parsed : 1));
+    setCart((previous) => previous.map((row) =>
+      row.product.id === line.product.id ? { ...row, quantity: clamped } : row));
+  };
 
   const subtotalKobo = cart.reduce(
     (sum, line) => sum + Math.round(Number(line.product.price) * 100) * line.quantity,
@@ -281,23 +301,36 @@ const PointOfSale = () => {
           <X size={20} />
         </button>
       </div>
-      {cart.length === 0 ? (
-        <p className="muted">Tap a product to add it.</p>
-      ) : (
-        <>
-          {cart.map((line) => (
+
+      <div className="pos-cart-body">
+        {cart.length === 0 ? (
+          <p className="muted">Tap a product to add it.</p>
+        ) : (
+          cart.map((line) => (
             <div className="pos-cart-row" key={line.product.id}>
-              <div>
+              <div className="pos-cart-row__info">
                 <div className="pos-cart-row__name">{line.product.name}</div>
                 <div className="pos-cart-row__meta">{formatNaira(line.product.price)} each</div>
               </div>
               <div className="pos-qty">
-                <button type="button" onClick={() => setQty(line.product.id, -1)} aria-label={`Decrease ${line.product.name}`}><Minus size={17} /></button>
-                <span>{line.quantity}</span>
-                <button type="button" onClick={() => setQty(line.product.id, 1)} aria-label={`Increase ${line.product.name}`} disabled={line.quantity >= line.product.stock}><Plus size={17} /></button>
+                <button type="button" onClick={() => setQty(line.product.id, -1)} aria-label={`Decrease ${line.product.name}`}><Minus size={16} /></button>
+                <input
+                  type="number"
+                  min={1}
+                  max={line.product.stock}
+                  value={line.quantity}
+                  onChange={(event) => setQtyExact(line, event.target.value)}
+                  aria-label={`Quantity of ${line.product.name}`}
+                />
+                <button type="button" onClick={() => setQty(line.product.id, 1)} aria-label={`Increase ${line.product.name}`} disabled={line.quantity >= line.product.stock}><Plus size={16} /></button>
               </div>
             </div>
-          ))}
+          ))
+        )}
+      </div>
+
+      <div className="pos-cart-foot">
+        {cart.length > 0 && (
           <fieldset className="payment-choice">
             <legend>Payment</legend>
             {[
@@ -323,18 +356,18 @@ const PointOfSale = () => {
             })}
             {walkIn && <p className="payment-choice__hint">Walk-in sales are paid in full — pick a named customer to sell on credit.</p>}
           </fieldset>
-          <dl className="sale-totals" style={{ maxWidth: "none" }}>
-            <div className="sale-totals__grand">
-              <dt>{itemCount} item{itemCount === 1 ? "" : "s"} · {customer?.name}</dt>
-              <dd>{formatNaira(total)}</dd>
-            </div>
-          </dl>
-        </>
-      )}
-      <button className="button button--primary pos-record" onClick={completeSale} disabled={saving || cart.length === 0}>
-        <ShoppingCart size={18} />
-        {saving ? "Saving on this device…" : `Record sale · ${formatNaira(total)}`}
-      </button>
+        )}
+        <dl className="sale-totals" style={{ maxWidth: "none" }}>
+          <div className="sale-totals__grand">
+            <dt>{itemCount} item{itemCount === 1 ? "" : "s"}{customer ? ` · ${customer.name}` : ""}</dt>
+            <dd>{formatNaira(total)}</dd>
+          </div>
+        </dl>
+        <button className="button button--primary pos-record" onClick={completeSale} disabled={saving || cart.length === 0}>
+          <ShoppingCart size={18} />
+          {saving ? "Saving on this device…" : `Record sale · ${formatNaira(total)}`}
+        </button>
+      </div>
     </div>
   );
 
@@ -353,51 +386,45 @@ const PointOfSale = () => {
       <div className="pos">
         <div>
           <div className="surface form-card pos-controls">
-            <div className="field">
-              <span>Customer</span>
-              <div className="pos-customer-row">
-                <div className={`combo${walkIn ? " combo--locked" : ""}`} ref={comboRef}>
-                  <div className="pos-search">
-                    <Search size={18} />
-                    <input
-                      value={customerSearch}
-                      onChange={(event) => {
-                        setCustomerSearch(event.target.value);
-                        setCustomerId("");
-                        setCustomerOpen(true);
-                      }}
-                      onFocus={() => setCustomerOpen(true)}
-                      placeholder="Search customer…"
-                      aria-label="Search customer"
-                      role="combobox"
-                      aria-expanded={customerOpen}
-                      disabled={walkIn}
-                    />
-                    <button type="button" className="combo__toggle" onClick={() => setCustomerOpen((open) => !open)} aria-label="Show customers" disabled={walkIn}>
-                      <ChevronDown size={18} />
-                    </button>
-                  </div>
-                  {customerOpen && !walkIn && (
-                    <ul className="combo__menu" role="listbox">
-                      {customerMatches.length === 0 ? (
-                        <li className="combo__empty">
-                          {namedCustomers.length === 0 ? "No customers added yet." : "No customers found."}
-                        </li>
-                      ) : (
-                        customerMatches.map((item) => (
-                          <li key={item.id}>
-                            <button type="button" className="combo__item" onClick={() => selectCustomer(item)}>
-                              {item.name}
-                            </button>
-                          </li>
-                        ))
-                      )}
-                    </ul>
-                  )}
+            <div className="pos-customer-bar">
+              <div className={`combo${walkIn ? " combo--locked" : ""}`} ref={comboRef}>
+                <div className="pos-search">
+                  <Search size={18} />
+                  <input
+                    value={customerSearch}
+                    onChange={(event) => {
+                      setCustomerSearch(event.target.value);
+                      setCustomerId("");
+                      setCustomerOpen(true);
+                    }}
+                    onFocus={() => setCustomerOpen(true)}
+                    placeholder="Search customer…"
+                    aria-label="Search customer"
+                    role="combobox"
+                    aria-expanded={customerOpen}
+                    disabled={walkIn}
+                  />
+                  <button type="button" className="combo__toggle" onClick={() => setCustomerOpen((open) => !open)} aria-label="Show customers" disabled={walkIn}>
+                    <ChevronDown size={18} />
+                  </button>
                 </div>
-                <button className="button button--ghost pos-add-customer" type="button" onClick={() => setAddingCustomer((open) => !open)} disabled={walkIn}>
-                  <UserPlus size={17} /> Add customer
-                </button>
+                {customerOpen && !walkIn && (
+                  <ul className="combo__menu" role="listbox">
+                    {customerMatches.length === 0 ? (
+                      <li className="combo__empty">
+                        {namedCustomers.length === 0 ? "No customers added yet." : "No customers found."}
+                      </li>
+                    ) : (
+                      customerMatches.map((item) => (
+                        <li key={item.id}>
+                          <button type="button" className="combo__item" onClick={() => selectCustomer(item)}>
+                            {item.name}
+                          </button>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                )}
               </div>
               <label className="pos-walkin-check">
                 <input
@@ -405,46 +432,68 @@ const PointOfSale = () => {
                   checked={walkIn}
                   onChange={(event) => void toggleWalkIn(event.target.checked)}
                 />
-                <span>Walk-in customer <small>(no details needed)</small></span>
+                <span>Walk-in</span>
               </label>
-              {addingCustomer && (
-                <div className="inline-customer">
-                  <input value={newCustomerName} onChange={(event) => setNewCustomerName(event.target.value)} placeholder="Customer name" autoFocus />
-                  <button type="button" className="button button--primary button--small" onClick={() => void addCustomer()}>Save customer</button>
-                </div>
-              )}
+              <button className="button button--ghost pos-add-customer" type="button" onClick={() => setAddingCustomer((open) => !open)} disabled={walkIn}>
+                <UserPlus size={17} /> Add
+              </button>
             </div>
-            <label className="field">
-              <span>Products</span>
-              <div className="pos-search">
-                <Search size={18} />
-                <input value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Search products…" />
+            {addingCustomer && (
+              <div className="inline-customer">
+                <input value={newCustomerName} onChange={(event) => setNewCustomerName(event.target.value)} placeholder="Customer name" autoFocus />
+                <button type="button" className="button button--primary button--small" onClick={() => void addCustomer()}>Save customer</button>
               </div>
-            </label>
+            )}
+
+            <div className="pos-search">
+              <Search size={18} />
+              <input value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Search products…" />
+            </div>
+
+            {productCategories.length > 0 && (
+              <div className="pos-chips" role="tablist" aria-label="Product categories">
+                <button type="button" className={`pos-chip${categoryFilter === "" ? " pos-chip--active" : ""}`} onClick={() => setCategoryFilter("")}>All</button>
+                {productCategories.map((cat) => (
+                  <button key={cat} type="button" className={`pos-chip${categoryFilter === cat ? " pos-chip--active" : ""}`} onClick={() => setCategoryFilter(cat)}>{cat}</button>
+                ))}
+              </div>
+            )}
           </div>
 
           {!hydrated ? (
             <p className="muted">Opening saved products…</p>
+          ) : filtered.length === 0 ? (
+            <p className="muted">No saved products match this search.</p>
           ) : (
-            <div className="pos-products">
+            <ul className="pos-list">
               {filtered.map((product) => {
                 const selected = cartQty(product.id) > 0;
+                const out = product.stock <= 0;
                 return (
-                  <button key={product.id} className={`pos-product${selected ? " pos-product--selected" : ""}`} onClick={() => toggleProduct(product)} type="button" disabled={product.stock <= 0} aria-pressed={selected}>
-                    {selected && <span className="pos-product__check" aria-label="Selected"><CheckCircle2 size={20} /></span>}
-                    {product.image ? (
-                      <img src={product.image} alt="" />
-                    ) : (
-                      <span className="pos-product__placeholder"><Package size={28} /></span>
-                    )}
-                    <span className="pos-product__name">{product.name}</span>
-                    <span className="pos-product__meta">Stock {product.stock}</span>
-                    <span className="pos-product__price">{formatNaira(product.price)}</span>
-                  </button>
+                  <li key={product.id}>
+                    <button
+                      className={`pos-list-row${selected ? " pos-list-row--selected" : ""}`}
+                      onClick={() => toggleProduct(product)}
+                      type="button"
+                      disabled={out}
+                      aria-pressed={selected}
+                    >
+                      <span className="pos-list-row__main">
+                        <span className="pos-list-row__name">{product.name}</span>
+                        {product.category && <span className="pos-list-row__cat">{product.category}</span>}
+                      </span>
+                      <span className="pos-list-row__stock" style={{ color: stockColor(product.stock, product.reorder_level) }}>
+                        {out ? "Out of stock" : `Stock ${product.stock}`}
+                      </span>
+                      <span className="pos-list-row__price">{formatNaira(product.price)}</span>
+                      <span className={`pos-list-row__pick${selected ? " pos-list-row__pick--on" : ""}`}>
+                        {selected ? <CheckCircle2 size={20} /> : <Plus size={18} />}
+                      </span>
+                    </button>
+                  </li>
                 );
               })}
-              {filtered.length === 0 && <p className="muted">No saved products match this search.</p>}
-            </div>
+            </ul>
           )}
         </div>
 
