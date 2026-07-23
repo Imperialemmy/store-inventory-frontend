@@ -2,16 +2,18 @@ import type {
   CachedCustomer,
   CachedProduct,
   CartDraft,
+  HeldSale,
   QueuedSale,
 } from "./types";
 
 const DB_NAME = "akinfolu-offline";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const STORES = {
   products: "products",
   customers: "customers",
   cart: "cart",
+  held: "held",
   sales: "sales",
   meta: "meta",
 } as const;
@@ -38,6 +40,9 @@ export const openOfflineDb = () => {
       }
       if (!db.objectStoreNames.contains(STORES.cart)) {
         db.createObjectStore(STORES.cart, { keyPath: "key" });
+      }
+      if (!db.objectStoreNames.contains(STORES.held)) {
+        db.createObjectStore(STORES.held, { keyPath: "id" });
       }
       if (!db.objectStoreNames.contains(STORES.sales)) {
         const sales = db.createObjectStore(STORES.sales, { keyPath: "client_sale_id" });
@@ -132,6 +137,11 @@ export const offlineDb = {
     get: () => get<CartDraft>(STORES.cart, "active"),
     put: (value: CartDraft) => put(STORES.cart, value),
     clear: () => remove(STORES.cart, "active"),
+  },
+  held: {
+    all: () => getAll<HeldSale>(STORES.held),
+    put: (value: HeldSale) => put(STORES.held, value),
+    remove: (id: string) => remove(STORES.held, id),
   },
   sales: {
     all: () => getAll<QueuedSale>(STORES.sales),
