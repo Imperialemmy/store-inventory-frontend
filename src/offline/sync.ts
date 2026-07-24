@@ -7,6 +7,7 @@ import { queryKeys } from "../query/queryKeys";
 
 export const SYNC_EVENT = "akinfolu-sync-change";
 let activeSync: Promise<void> | null = null;
+let syncRequested = false;
 let retryTimer: number | undefined;
 
 const emit = () => window.dispatchEvent(new CustomEvent(SYNC_EVENT));
@@ -97,20 +98,30 @@ export const recoverInterruptedSync = async () => {
   emit();
 };
 
+const runSyncPass = async () => {
+  try {
+    if (!localStorage.getItem("access_token")) return;
+    await api.get("/health/");
+    await offlineDb.meta.put("apiReachable", true);
+    const sales = (await offlineDb.sales.all())
+      .filter((sale) => sale.state === "pending")
+      .sort((a, b) => a.queued_at.localeCompare(b.queued_at));
+    for (const sale of sales) await syncOne(sale);
+  } catch {
+    await offlineDb.meta.put("apiReachable", false);
+    emit();
+  }
+};
+
 export const syncPendingSales = () => {
+  syncRequested = true;
   if (activeSync) return activeSync;
   activeSync = (async () => {
     try {
-      if (!localStorage.getItem("access_token")) return;
-      await api.get("/health/");
-      await offlineDb.meta.put("apiReachable", true);
-      const sales = (await offlineDb.sales.all())
-        .filter((sale) => sale.state === "pending")
-        .sort((a, b) => a.queued_at.localeCompare(b.queued_at));
-      for (const sale of sales) await syncOne(sale);
-    } catch {
-      await offlineDb.meta.put("apiReachable", false);
-      emit();
+      while (syncRequested) {
+        syncRequested = false;
+        await runSyncPass();
+      }
     } finally {
       activeSync = null;
     }

@@ -92,4 +92,35 @@ describe("sale synchronization", () => {
     await recoverInterruptedSync();
     expect((await offlineDb.sales.get(sale.client_sale_id))?.state).toBe("pending");
   });
+
+  it("runs another pass when a sale is queued during an active sync", async () => {
+    const first = queuedSale("86eadc58-d3ec-41ab-b155-943ca2367ced");
+    const second = {
+      ...queuedSale("7f7702be-4348-4b0c-ade8-f0929856614e"),
+      queued_at: "2026-07-11T09:01:00.000Z",
+    };
+    await offlineDb.sales.put(first);
+
+    let finishFirstRequest: ((response: { data: { id: number; invoice_number: string } }) => void) | undefined;
+    vi.mocked(api.post)
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        finishFirstRequest = resolve;
+      }))
+      .mockResolvedValueOnce({ data: { id: 12, invoice_number: "INV-00012" } });
+
+    const activePass = syncPendingSales();
+    await vi.waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+
+    // This mirrors a sale completing while a login/focus sync is still busy.
+    await offlineDb.sales.put(second);
+    const requestedPass = syncPendingSales();
+    expect(requestedPass).toBe(activePass);
+
+    finishFirstRequest?.({ data: { id: 11, invoice_number: "INV-00011" } });
+    await activePass;
+
+    expect(api.post).toHaveBeenCalledTimes(2);
+    expect((await offlineDb.sales.get(first.client_sale_id))?.state).toBe("synced");
+    expect((await offlineDb.sales.get(second.client_sale_id))?.state).toBe("synced");
+  });
 });
