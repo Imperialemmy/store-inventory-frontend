@@ -12,6 +12,10 @@ interface RefreshResponse {
   access: string;
 }
 
+interface RealtimeTicketResponse {
+  ticket: string;
+}
+
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 
 const api = axios.create({
@@ -91,5 +95,14 @@ api.interceptors.response.use(
     }
   }
 );
+
+export const requestRealtimeTicket = async () => {
+  const { data } = await api.post<RealtimeTicketResponse>(
+    "realtime-ticket/",
+    undefined,
+    { _background: true } as RetryableRequest
+  );
+  return data.ticket;
+};
 
 export default api;

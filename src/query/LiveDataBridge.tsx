@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { requestRealtimeTicket } from "../services/api";
 import {
   DATA_CHANGE_EVENT,
   invalidateResources,
@@ -42,6 +43,7 @@ const LiveDataBridge = () => {
     let retryTimer: number | undefined;
     let fallbackTimer: number | undefined;
     let stopped = false;
+    let connectionVersion = 0;
 
     const stopFallback = () => {
       window.clearInterval(fallbackTimer);
@@ -56,11 +58,27 @@ const LiveDataBridge = () => {
       }, 15_000);
     };
 
-    const connect = () => {
+    const scheduleReconnect = () => {
+      if (stopped) return;
+      startFallback();
+      window.clearTimeout(retryTimer);
+      retryTimer = window.setTimeout(() => void connect(), 4_000);
+    };
+
+    const connect = async () => {
       const base = websocketUrl();
       const token = localStorage.getItem("access_token");
       if (stopped || !base || !token) return;
-      base.searchParams.set("token", token);
+      const version = connectionVersion;
+      let ticket: string;
+      try {
+        ticket = await requestRealtimeTicket();
+      } catch {
+        scheduleReconnect();
+        return;
+      }
+      if (stopped || version !== connectionVersion) return;
+      base.searchParams.set("ticket", ticket);
       socket = new WebSocket(base);
       socket.onopen = stopFallback;
       socket.onmessage = (event) => {
@@ -72,23 +90,22 @@ const LiveDataBridge = () => {
         }
       };
       socket.onclose = () => {
-        if (!stopped) {
-          startFallback();
-          retryTimer = window.setTimeout(connect, 4_000);
-        }
+        scheduleReconnect();
       };
     };
 
-    connect();
+    void connect();
     const reconnect = () => {
+      connectionVersion += 1;
       if (socket) socket.onclose = null;
       socket?.close();
       window.clearTimeout(retryTimer);
-      connect();
+      void connect();
     };
     window.addEventListener("akinfolu-auth-change", reconnect);
     return () => {
       stopped = true;
+      connectionVersion += 1;
       window.clearTimeout(retryTimer);
       stopFallback();
       socket?.close();
