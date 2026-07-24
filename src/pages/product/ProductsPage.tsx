@@ -35,6 +35,7 @@ const ProductsPage = () => {
   const [searchParams] = useSearchParams();
   // Seed from ?q= so the topbar search lands here pre-filtered.
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const { data: products = [], isLoading: loading } = useQuery<Product[]>({
     queryKey: queryKeys.products,
     queryFn: async () => {
@@ -49,6 +50,7 @@ const ProductsPage = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const popRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -59,17 +61,29 @@ const ProductsPage = () => {
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
 
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const matched = q ? products.filter((p) => p.name.toLowerCase().includes(q)) : products;
-    return [...matched].sort((a, b) => a.name.localeCompare(b.name));
-  }, [products, query]);
-
-  // Existing categories power the form's suggestion list.
+  // Existing categories power both the directory filter and form suggestions.
   const categories = useMemo(
     () => Array.from(new Set(products.map((p) => p.category).filter(Boolean))).sort(),
     [products],
   );
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const matched = products.filter((product) => {
+      if (categoryFilter && product.category !== categoryFilter) return false;
+      if (q && !product.name.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    return [...matched].sort((a, b) => a.name.localeCompare(b.name));
+  }, [products, query, categoryFilter]);
+
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: 0 });
+  }, [query, categoryFilter]);
+
+  useEffect(() => {
+    if (categoryFilter && !categories.includes(categoryFilter)) setCategoryFilter("");
+  }, [categories, categoryFilter]);
 
   const openAdd = () => {
     setDraft(emptyDraft);
@@ -171,7 +185,7 @@ const ProductsPage = () => {
     <div className="page-container page-container--narrow">
       {/* Search bar (its own card so the dialog can float free of the list's clip) */}
       <div className="surface" style={{ position: "relative", marginBottom: "14px" }}>
-        <div className="search-box" style={{ borderBottom: "none", gridTemplateColumns: canManage ? "auto 1fr auto" : "auto 1fr" }}>
+        <div className="search-box" style={{ borderBottom: categories.length > 0 ? undefined : "none" }}>
           <Search size={18} />
           <input
             type="search"
@@ -181,12 +195,24 @@ const ProductsPage = () => {
             aria-label="Search products"
             autoFocus
           />
-          {canManage && (
-            <button className="button button--primary button--small" onClick={openAdd} aria-label="Add product" type="button">
-              <Plus size={16} />
-            </button>
-          )}
+          <div className="search-box__actions">
+            <small>{visible.length}</small>
+            {canManage && (
+              <button className="button button--primary button--small" onClick={openAdd} aria-label="Add product" type="button">
+                <Plus size={16} />
+              </button>
+            )}
+          </div>
         </div>
+
+        {categories.length > 0 && (
+          <div className="filter-chips directory-filter-chips" role="tablist" aria-label="Product categories">
+            <button type="button" className={`filter-chip${categoryFilter === "" ? " filter-chip--active" : ""}`} onClick={() => setCategoryFilter("")}>All</button>
+            {categories.map((category) => (
+              <button key={category} type="button" className={`filter-chip${categoryFilter === category ? " filter-chip--active" : ""}`} onClick={() => setCategoryFilter(category)}>{category}</button>
+            ))}
+          </div>
+        )}
 
         {/* Inline add / edit dialog */}
         {open && (
@@ -259,7 +285,7 @@ const ProductsPage = () => {
         ) : visible.length === 0 ? (
           <div className="empty-state"><strong>{query ? "No products match your search" : "No products yet"}</strong></div>
         ) : (
-          <ul className="inventory-list">
+          <ul ref={listRef} className="inventory-list app-scroll-region app-scroll-region--inventory" tabIndex={0} aria-label="Inventory products">
             {visible.map((p) => (
               <li key={p.id} className="inventory-list__row" onClick={() => openEdit(p)}
                   onKeyDown={(e) => { if (e.key === "Enter") openEdit(p); }} tabIndex={canManage ? 0 : undefined} role={canManage ? "button" : undefined}>

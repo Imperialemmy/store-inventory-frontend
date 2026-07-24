@@ -67,6 +67,7 @@ const PointOfSale = () => {
   const [held, setHeld] = useState<HeldSale[]>([]);
   const [heldOpen, setHeldOpen] = useState(false);
   const comboRef = useRef<HTMLDivElement>(null);
+  const productListRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     if (!success) return;
@@ -227,6 +228,10 @@ const PointOfSale = () => {
       .sort((a, b) => (productUsage[b.id] ?? 0) - (productUsage[a.id] ?? 0) || a.name.localeCompare(b.name))
       .slice(0, 40);
   }, [products, productQuery, categoryFilter, productUsage]);
+
+  useEffect(() => {
+    productListRef.current?.scrollTo({ top: 0 });
+  }, [productQuery, categoryFilter]);
 
   // Clicking a product toggles whether it's in the sale. The amount is then
   // adjusted in the cart. Clicking a selected product again removes it and
@@ -604,10 +609,10 @@ const PointOfSale = () => {
             </div>
 
             {productCategories.length > 0 && (
-              <div className="pos-chips" role="tablist" aria-label="Product categories">
-                <button type="button" className={`pos-chip${categoryFilter === "" ? " pos-chip--active" : ""}`} onClick={() => setCategoryFilter("")}>All</button>
+              <div className="filter-chips" role="tablist" aria-label="Product categories">
+                <button type="button" className={`filter-chip${categoryFilter === "" ? " filter-chip--active" : ""}`} onClick={() => setCategoryFilter("")}>All</button>
                 {productCategories.map((cat) => (
-                  <button key={cat} type="button" className={`pos-chip${categoryFilter === cat ? " pos-chip--active" : ""}`} onClick={() => setCategoryFilter(cat)}>{cat}</button>
+                  <button key={cat} type="button" className={`filter-chip${categoryFilter === cat ? " filter-chip--active" : ""}`} onClick={() => setCategoryFilter(cat)}>{cat}</button>
                 ))}
               </div>
             )}
@@ -618,7 +623,7 @@ const PointOfSale = () => {
           ) : filtered.length === 0 ? (
             <p className="muted">No saved products match this search.</p>
           ) : (
-            <ul className="pos-list">
+            <ul ref={productListRef} className="pos-list app-scroll-region app-scroll-region--pos" tabIndex={0} aria-label="Products">
               {filtered.map((product) => {
                 const selected = cartQty(product.id) > 0;
                 const out = product.stock <= 0;
@@ -635,8 +640,14 @@ const PointOfSale = () => {
                         <span className="pos-list-row__name">{product.name}</span>
                         {product.category && <span className="pos-list-row__cat">{product.category}</span>}
                       </span>
-                      <span className="pos-list-row__stock" style={{ color: stockColor(product.stock, product.reorder_level) }}>
-                        {out ? "Out of stock" : `Stock ${product.stock}`}
+                      <span
+                        className="pos-list-row__stock"
+                        aria-label={out ? "Out of stock" : `${product.stock} in stock`}
+                      >
+                        <span className="pos-list-row__stock-label">Stock</span>
+                        <span className="pos-list-row__stock-value" style={{ color: stockColor(product.stock, product.reorder_level) }}>
+                          {out ? "Out" : product.stock}
+                        </span>
                       </span>
                       <span className="pos-list-row__price">{formatNaira(product.price)}</span>
                       <span className={`pos-list-row__pick${selected ? " pos-list-row__pick--on" : ""}`}>

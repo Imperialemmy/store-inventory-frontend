@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Plus } from "lucide-react";
@@ -12,6 +12,7 @@ const CustomerList = () => {
   const navigate = useNavigate();
   const { canSell } = useUserRole();
   const [query, setQuery] = useState("");
+  const listRef = useRef<HTMLUListElement>(null);
   const { data: customers = [], isLoading: loading } = useQuery<Customer[]>({
     queryKey: queryKeys.customers,
     queryFn: async () => {
@@ -27,6 +28,10 @@ const CustomerList = () => {
       : customers;
     return [...matched].sort((a, b) => a.name.localeCompare(b.name));
   }, [customers, query]);
+
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: 0 });
+  }, [query]);
 
   return (
     <div className="page-container">
@@ -49,7 +54,7 @@ const CustomerList = () => {
         ) : visible.length === 0 ? (
           <div className="empty-state"><strong>{query ? "No customers match your search" : "No customers yet"}</strong></div>
         ) : (
-          <ul className="inventory-list">
+          <ul ref={listRef} className="inventory-list app-scroll-region app-scroll-region--customers" tabIndex={0} aria-label="Customer directory">
             {visible.map((c) => (
               <li key={c.id} className="inventory-list__row" onClick={() => navigate(`/customers/${c.id}`)}
                   onKeyDown={(e) => { if (e.key === "Enter") navigate(`/customers/${c.id}`); }} tabIndex={0} role="link">
