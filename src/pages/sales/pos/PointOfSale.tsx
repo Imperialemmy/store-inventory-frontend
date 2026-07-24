@@ -23,6 +23,7 @@ import { queryKeys } from "../../../query/queryKeys";
 // Prices are final at this store — the total is exactly the item prices,
 // no VAT or extra fees on top.
 const WALK_IN_NAME = "Walk-in Customer";
+const SUCCESS_MESSAGE_DURATION_MS = 5_000;
 
 // Traffic-light colour for a stock count against its reorder level.
 const stockColor = (stock: number, reorder = 5) =>
@@ -66,6 +67,12 @@ const PointOfSale = () => {
   const [held, setHeld] = useState<HeldSale[]>([]);
   const [heldOpen, setHeldOpen] = useState(false);
   const comboRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!success) return;
+    const timeout = window.setTimeout(() => setSuccess(null), SUCCESS_MESSAGE_DURATION_MS);
+    return () => window.clearTimeout(timeout);
+  }, [success]);
 
   const refreshCatalogue = useCallback(async () => {
     const [productResponse, customerResponse] = await Promise.all([
