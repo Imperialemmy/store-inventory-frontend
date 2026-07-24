@@ -1,5 +1,11 @@
-const CACHE_VERSION = "akinfolu-shell-v1";
+const CACHE_VERSION = "akinfolu-shell-v2";
 const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/tab_logo/akf.svg"];
+
+const isServerDataRequest = (url) =>
+  url.pathname === "/api" ||
+  url.pathname.startsWith("/api/") ||
+  url.pathname === "/backend" ||
+  url.pathname.startsWith("/backend/");
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_VERSION).then((cache) => cache.addAll(SHELL)));
@@ -17,9 +23,17 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("message", (event) => {
   if (event.data?.type !== "CACHE_URLS" || !Array.isArray(event.data.urls)) return;
+  const cacheableUrls = event.data.urls.filter((value) => {
+    try {
+      const url = new URL(value, self.location.origin);
+      return url.origin === self.location.origin && !isServerDataRequest(url);
+    } catch {
+      return false;
+    }
+  });
   event.waitUntil(
     caches.open(CACHE_VERSION).then((cache) =>
-      Promise.all(event.data.urls.map((url) => cache.add(url).catch(() => undefined)))
+      Promise.all(cacheableUrls.map((url) => cache.add(url).catch(() => undefined)))
     )
   );
 });
@@ -30,7 +44,7 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   // API data must never be served cache-first. Server-state freshness is
   // managed by the application query cache and live invalidation channel.
-  if (url.pathname.startsWith("/api/")) return;
+  if (isServerDataRequest(url)) return;
 
   if (event.request.mode === "navigate") {
     event.respondWith(

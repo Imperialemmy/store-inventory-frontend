@@ -11,7 +11,15 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
     void navigator.serviceWorker.register("/sw.js").then(() => navigator.serviceWorker.ready).then((registration) => {
       const urls = performance.getEntriesByType("resource")
         .map((entry) => entry.name)
-        .filter((url) => url.startsWith(window.location.origin));
+        .filter((value) => {
+          const url = new URL(value, window.location.origin);
+          const isServerData =
+            url.pathname === "/api" ||
+            url.pathname.startsWith("/api/") ||
+            url.pathname === "/backend" ||
+            url.pathname.startsWith("/backend/");
+          return url.origin === window.location.origin && !isServerData;
+        });
       registration.active?.postMessage({ type: "CACHE_URLS", urls });
     });
   });
