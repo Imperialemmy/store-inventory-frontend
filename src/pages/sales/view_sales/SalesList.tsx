@@ -196,6 +196,8 @@ const SalesList = () => {
                       {invoiceStatusLabel(sale)}
                     </span>
                     {Number(sale.refund_due) > 0 && <span style={{ color: "var(--danger)", fontWeight: 750, fontSize: ".78rem" }}>Refund due</span>}
+                    {sale.inventory_attention && !sale.inventory_resolution && <span className="invoice-attention-chip">Stock conflict</span>}
+                    {sale.inventory_resolution === "backorder" && <span className="invoice-backorder-chip">Backordered</span>}
                   </div>
                   <span className="inventory-list__open">
                     {formatNaira(sale.return_status === "none" ? sale.total : sale.net_total)}

@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Printer } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Printer, ShieldCheck } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import ConfirmDialog from "../../../components/ConfirmDialog";
@@ -41,6 +41,10 @@ const SaleDetail = () => {
   const [returnSuccess, setReturnSuccess] = useState<string | null>(null);
   const [savingReturn, setSavingReturn] = useState(false);
   const [confirmReturnOpen, setConfirmReturnOpen] = useState(false);
+  const [conflictResolution, setConflictResolution] = useState("stock_corrected");
+  const [conflictNote, setConflictNote] = useState("");
+  const [conflictError, setConflictError] = useState<string | null>(null);
+  const [resolvingConflict, setResolvingConflict] = useState(false);
 
   useEffect(() => {
     if (!sale || Number(sale.refund_due) <= 0) return;
@@ -79,6 +83,27 @@ const SaleDetail = () => {
     const historyIndex = (window.history.state as { idx?: number } | null)?.idx ?? 0;
     if (historyIndex > 0) navigate(-1);
     else navigate("/sales/invoices");
+  };
+
+  const resolveStockConflict = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!conflictNote.trim()) return setConflictError("Add a short note explaining how the conflict was handled.");
+    setResolvingConflict(true);
+    setConflictError(null);
+    try {
+      await api.post(`/sales/${saleId}/resolve-stock-conflict/`, {
+        resolution: conflictResolution,
+        note: conflictNote.trim(),
+      });
+      setConflictNote("");
+      await refreshEverySaleView();
+      announceDataChange(["sales", "operations", "notifications"]);
+    } catch (requestError: unknown) {
+      const detail = (requestError as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      setConflictError(detail || "Could not resolve the stock conflict.");
+    } finally {
+      setResolvingConflict(false);
+    }
   };
 
   const requestRefund = (event: FormEvent) => {
@@ -205,6 +230,48 @@ const SaleDetail = () => {
           </div>
         }
       />
+
+      {sale.inventory_attention && (
+        <section className={`surface inventory-conflict-card no-print${sale.inventory_resolution ? " inventory-conflict-card--resolved" : ""}`}>
+          <div className="inventory-conflict-card__head">
+            {sale.inventory_resolution ? <ShieldCheck size={22} /> : <AlertTriangle size={22} />}
+            <div>
+              <h3>{sale.inventory_resolution ? "Stock conflict reconciled" : "Stock conflict requires attention"}</h3>
+              <p>{sale.inventory_resolution
+                ? `Resolution: ${sale.inventory_resolution === "stock_corrected" ? "Stock corrected" : sale.inventory_resolution === "backorder" ? "Accepted as backorder" : "Intentional negative stock"}.`
+                : "This sale completed against stock that was no longer fully available. The invoice and payment were preserved."}</p>
+            </div>
+          </div>
+          {sale.inventory_resolution ? (
+            <div className="inventory-conflict-card__record">
+              <strong>Reconciliation note</strong>
+              <span>{sale.inventory_resolution_note}</span>
+              {sale.inventory_resolved_at && <small>{new Date(sale.inventory_resolved_at).toLocaleString()}</small>}
+            </div>
+          ) : userRole.isAdmin ? (
+            <form className="inventory-conflict-form" onSubmit={resolveStockConflict}>
+              {conflictError && <div className="notice notice--error" role="alert">{conflictError}</div>}
+              <label className="field">
+                <span>Resolution</span>
+                <select value={conflictResolution} onChange={(event) => setConflictResolution(event.target.value)}>
+                  <option value="stock_corrected">Stock corrected or restocked</option>
+                  <option value="backorder">Accepted as backorder</option>
+                  <option value="accepted_negative">Confirm intentional negative stock</option>
+                </select>
+              </label>
+              <label className="field inventory-conflict-form__note">
+                <span>Reconciliation note</span>
+                <input value={conflictNote} onChange={(event) => setConflictNote(event.target.value)} placeholder="What was checked or agreed?" maxLength={255} />
+              </label>
+              <button className="button button--primary" type="submit" disabled={resolvingConflict}>
+                {resolvingConflict ? "Saving…" : "Resolve conflict"}
+              </button>
+            </form>
+          ) : (
+            <p className="inventory-conflict-card__seller-note">An administrator must reconcile this invoice.</p>
+          )}
+        </section>
+      )}
 
       {/* Printable branded invoice */}
       <section className="surface invoice-sheet">

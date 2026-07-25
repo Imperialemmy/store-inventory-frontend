@@ -43,7 +43,7 @@ const payloadFor = (sale: QueuedSale) => ({
   customer: sale.customer,
   sold_at: sale.sold_at,
   device_id: sale.device_id,
-  offline_created: true,
+  offline_created: sale.offline_created,
   vat_rate: sale.vat_rate,
   discount: sale.discount,
   items: sale.items.map(({ product, quantity, unit_price }) => ({

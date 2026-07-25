@@ -60,6 +60,12 @@ export interface Sale {
   balance: string;
   payment_status: "pending" | "partial" | "paid";
   return_status: "none" | "partial" | "full";
+  inventory_attention: boolean;
+  pricing_attention: boolean;
+  inventory_resolution: "" | "stock_corrected" | "backorder" | "accepted_negative";
+  inventory_resolution_note: string;
+  inventory_resolved_by: number | null;
+  inventory_resolved_at: string | null;
   notes: string | null;
   items: SaleItem[];
   payments: Payment[];

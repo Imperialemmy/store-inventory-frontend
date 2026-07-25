@@ -49,7 +49,8 @@ export interface QueuedSale {
   sold_at: string;
   queued_at: string;
   device_id: string;
-  offline_created: true;
+  offline_created: boolean;
+  reservation_expires_at?: string;
   vat_rate: number;
   discount: string;
   items: Array<{

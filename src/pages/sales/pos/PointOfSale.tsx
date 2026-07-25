@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, ShoppingCart, Plus, Minus, UserPlus,
   ChevronDown, X, CheckCircle2, Printer, PauseCircle, Play, Trash2,
+  CloudOff, ShieldCheck, LoaderCircle, AlertTriangle,
 } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
@@ -19,11 +20,21 @@ import type {
 import { announceDataChange, DATA_CHANGE_EVENT, type DataChange } from "../../../query/dataChanges";
 import { queryClient } from "../../../query/queryClient";
 import { queryKeys } from "../../../query/queryKeys";
+import { scarceOfflineProducts } from "./stockPolicy";
 
 // Prices are final at this store — the total is exactly the item prices,
 // no VAT or extra fees on top.
 const WALK_IN_NAME = "Walk-in Customer";
 const SUCCESS_MESSAGE_DURATION_MS = 5_000;
+const DEFAULT_OFFLINE_STOCK_SAFETY_THRESHOLD = 2;
+const RESERVATION_RENEWAL_MS = 60_000;
+
+type ReservationStatus = "idle" | "checking" | "reserved" | "offline" | "conflict";
+
+interface ReservationResponse {
+  expires_at: string;
+  offline_stock_safety_threshold: number;
+}
 
 // Traffic-light colour for a stock count against its reorder level.
 const stockColor = (stock: number, reorder = 5) =>
@@ -66,8 +77,15 @@ const PointOfSale = () => {
   const [lastSale, setLastSale] = useState<Receipt | null>(null);
   const [held, setHeld] = useState<HeldSale[]>([]);
   const [heldOpen, setHeldOpen] = useState(false);
+  const [reservationStatus, setReservationStatus] = useState<ReservationStatus>("idle");
+  const [reservationMessage, setReservationMessage] = useState("");
+  const [offlineThreshold, setOfflineThreshold] = useState(DEFAULT_OFFLINE_STOCK_SAFETY_THRESHOLD);
+  const [reservationRefresh, setReservationRefresh] = useState(0);
   const comboRef = useRef<HTMLDivElement>(null);
   const productListRef = useRef<HTMLUListElement>(null);
+  const reservationVersionRef = useRef(0);
+  const preserveReservationForSyncRef = useRef(false);
+  const deviceId = useMemo(() => getDeviceId(), []);
 
   useEffect(() => {
     if (!success) return;
@@ -153,6 +171,59 @@ const PointOfSale = () => {
       updatedAt: new Date().toISOString(),
     });
   }, [cart, customerId, customerSearch, walkIn, paymentMethod, hydrated]);
+
+  // Connected carts reserve their complete item set atomically. A short
+  // renewal keeps the claim alive while the cashier is still checking out.
+  useEffect(() => {
+    if (!hydrated) return;
+    if (cart.length === 0 && preserveReservationForSyncRef.current) {
+      preserveReservationForSyncRef.current = false;
+      setReservationStatus("idle");
+      setReservationMessage("");
+      return;
+    }
+    const version = ++reservationVersionRef.current;
+    let renewalTimer: number | undefined;
+    const timer = window.setTimeout(async () => {
+      if (cart.length > 0) {
+        setReservationStatus("checking");
+        setReservationMessage("Checking live stock…");
+      }
+      try {
+        const response = await api.post<ReservationResponse>("/stock-reservations/", {
+          device_id: deviceId,
+          items: cart.map((line) => ({ product: line.product.id, quantity: line.quantity })),
+        });
+        if (version !== reservationVersionRef.current) return;
+        setOfflineThreshold(response.data.offline_stock_safety_threshold);
+        if (cart.length === 0) {
+          setReservationStatus("idle");
+          setReservationMessage("");
+        } else {
+          setReservationStatus("reserved");
+          setReservationMessage("Live stock reserved for this cart.");
+          renewalTimer = window.setTimeout(() => setReservationRefresh((value) => value + 1), RESERVATION_RENEWAL_MS);
+        }
+      } catch (requestError: unknown) {
+        if (version !== reservationVersionRef.current) return;
+        const response = (requestError as { response?: { status?: number; data?: { detail?: string; conflicts?: Array<{ product_name: string; available: number }> } } })?.response;
+        if (response?.status === 409) {
+          const conflict = response.data?.conflicts?.[0];
+          setReservationStatus("conflict");
+          setReservationMessage(conflict
+            ? `${conflict.product_name} has ${conflict.available} available after other carts.`
+            : (response.data?.detail ?? "Some stock is reserved by another cart."));
+        } else {
+          setReservationStatus(cart.length > 0 ? "offline" : "idle");
+          setReservationMessage(cart.length > 0 ? "Offline — this sale is using saved stock." : "");
+        }
+      }
+    }, 250);
+    return () => {
+      window.clearTimeout(timer);
+      window.clearTimeout(renewalTimer);
+    };
+  }, [cart, deviceId, hydrated, reservationRefresh]);
 
   useEffect(() => {
     if (!customerOpen) return;
@@ -348,6 +419,14 @@ const PointOfSale = () => {
     setSuccess(null);
     if (!customerId || !customer) return setError("Pick a customer, or tick Walk-in customer.");
     if (cart.length === 0) return setError("Add at least one product.");
+    if (reservationStatus === "checking") return setError("Wait a moment while live stock is checked.");
+    if (reservationStatus === "conflict") return setError(reservationMessage || "Resolve the live stock conflict before completing this sale.");
+    if (reservationStatus !== "reserved") {
+      const scarce = scarceOfflineProducts(cart, offlineThreshold);
+      if (scarce.length > 0) {
+        return setError(`${scarce.map((line) => line.product.name).join(", ")} ${scarce.length === 1 ? "is" : "are"} at the offline safety limit. Reconnect to confirm the final stock before selling.`);
+      }
+    }
     setConfirmOpen(true);
   };
 
@@ -368,8 +447,9 @@ const PointOfSale = () => {
         customer_name: customer.name,
         sold_at: timestamp,
         queued_at: timestamp,
-        device_id: getDeviceId(),
-        offline_created: true,
+        device_id: deviceId,
+        offline_created: reservationStatus !== "reserved",
+        ...(reservationStatus === "reserved" ? { reservation_expires_at: new Date(Date.now() + RESERVATION_RENEWAL_MS * 2).toISOString() } : {}),
         vat_rate: 0,
         discount: "0",
         items: cart.map((line) => ({
@@ -423,11 +503,16 @@ const PointOfSale = () => {
       });
 
       setProductUsage(nextUsage);
+      // Keep the connected reservation until the queued request consumes it.
+      // If synchronization is interrupted, the server expires it automatically.
+      preserveReservationForSyncRef.current = reservationStatus === "reserved";
       setCart([]);
       setProductQuery("");
       setCartOpen(false);
       setSuccess(`${localReference} is saved safely on this device.`);
       setPostSaleOpen(true);
+      setReservationStatus("idle");
+      setReservationMessage("");
       void syncPendingSales();
     } catch {
       setError("This device could not save the sale. Keep this screen open and try again.");
@@ -471,6 +556,15 @@ const PointOfSale = () => {
           ))
         )}
       </div>
+
+      {cart.length > 0 && (
+        <div className={`stock-guard stock-guard--${reservationStatus}`} role="status">
+          {reservationStatus === "reserved" ? <ShieldCheck size={16} />
+            : reservationStatus === "checking" ? <LoaderCircle className="spin" size={16} />
+              : reservationStatus === "offline" ? <CloudOff size={16} /> : <AlertTriangle size={16} />}
+          <span>{reservationMessage || "Preparing stock check…"}</span>
+        </div>
+      )}
 
       <div className="pos-cart-foot">
         {cart.length > 0 && (
@@ -627,6 +721,7 @@ const PointOfSale = () => {
               {filtered.map((product) => {
                 const selected = cartQty(product.id) > 0;
                 const out = product.stock <= 0;
+                const guarded = product.stock > 0 && product.stock <= offlineThreshold;
                 return (
                   <li key={product.id}>
                     <button
@@ -648,6 +743,7 @@ const PointOfSale = () => {
                         <span className="pos-list-row__stock-value" style={{ color: stockColor(product.stock, product.reorder_level) }}>
                           {out ? "Out" : product.stock}
                         </span>
+                        {guarded && <span className="pos-list-row__guard">Online approval</span>}
                       </span>
                       <span className="pos-list-row__price">{formatNaira(product.price)}</span>
                       <span className={`pos-list-row__pick${selected ? " pos-list-row__pick--on" : ""}`}>

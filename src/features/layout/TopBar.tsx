@@ -14,13 +14,14 @@ interface TopBarProps {
 }
 
 interface NotificationItem {
-  type: "low_stock" | "overdue_invoice" | "expiring_batch" | "unsynced_sale" | "sync_attention";
+  type: "low_stock" | "stock_conflict" | "overdue_invoice" | "expiring_batch" | "unsynced_sale" | "sync_attention";
   message: string;
   link: string;
 }
 
 const typeIcon = {
   low_stock: PackageX,
+  stock_conflict: AlertCircle,
   overdue_invoice: Clock,
   expiring_batch: AlertTriangle,
   unsynced_sale: CloudOff,

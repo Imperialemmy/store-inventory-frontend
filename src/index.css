@@ -404,6 +404,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .local-sale-state { padding: 4px 8px; border-radius: 999px; color: #735612; background: var(--amber-soft); font-size: .72rem; font-weight: 750; }
 .local-sale-state--needs_attention { color: var(--danger); background: var(--danger-soft); }
 .local-sale-state--syncing { color: var(--brand-strong); background: var(--brand-soft); }
+.invoice-attention-chip,
+.invoice-backorder-chip { padding: 4px 8px; border-radius: 999px; font-size: .72rem; font-weight: 800; white-space: nowrap; }
+.invoice-attention-chip { color: var(--danger); background: var(--danger-soft); }
+.invoice-backorder-chip { color: #735612; background: var(--amber-soft); }
 :root[data-theme="dark"] .local-sale-state { color: #ffe09a; }
 .customer-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 18px; }
 .customer-stat { padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
@@ -483,9 +487,29 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .pos-list-row__stock { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 3.5ch; align-items: baseline; column-gap: 6px; white-space: nowrap; }
 .pos-list-row__stock-label { color: var(--ink-600); font-size: .72rem; font-weight: 650; text-align: right; }
 .pos-list-row__stock-value { font-size: .84rem; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+.pos-list-row__guard { grid-column: 1 / -1; color: var(--amber); font-size: .62rem; font-weight: 800; letter-spacing: .01em; text-align: right; }
 .pos-list-row__price { color: var(--brand); font-weight: 800; white-space: nowrap; text-align: right; }
 .pos-list-row__pick { display: inline-flex; align-items: center; justify-content: flex-end; color: var(--ink-600); }
 .pos-list-row__pick--on { color: var(--brand); }
+.stock-guard { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 9px 10px; border: 1px solid var(--line-strong); border-radius: 10px; color: var(--ink-700); background: var(--input-bg); font-size: .75rem; font-weight: 700; }
+.stock-guard--reserved { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 32%, var(--line)); background: color-mix(in srgb, var(--ok) 8%, var(--surface)); }
+.stock-guard--offline,
+.stock-guard--conflict { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 32%, var(--line)); background: var(--danger-soft); }
+.stock-guard--checking .spin { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.inventory-conflict-card { margin: 0 0 18px; padding: 20px; border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line)); background: color-mix(in srgb, var(--danger-soft) 62%, var(--surface)); }
+.inventory-conflict-card--resolved { border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); background: color-mix(in srgb, var(--ok) 7%, var(--surface)); }
+.inventory-conflict-card__head { display: flex; align-items: flex-start; gap: 12px; color: var(--danger); }
+.inventory-conflict-card--resolved .inventory-conflict-card__head { color: var(--ok); }
+.inventory-conflict-card__head h3 { margin: 0 0 4px; color: var(--ink-900); font-size: 1rem; }
+.inventory-conflict-card__head p { margin: 0; color: var(--ink-700); font-size: .84rem; }
+.inventory-conflict-form { display: grid; grid-template-columns: minmax(180px, .8fr) minmax(240px, 1.4fr) auto; align-items: end; gap: 12px; margin-top: 16px; }
+.inventory-conflict-form__note { min-width: 0; }
+.inventory-conflict-card__record { display: grid; gap: 3px; margin: 14px 0 0 34px; color: var(--ink-700); font-size: .82rem; }
+.inventory-conflict-card__record strong { color: var(--ink-900); }
+.inventory-conflict-card__record small,
+.inventory-conflict-card__seller-note { color: var(--ink-600); }
 
 /* Cart: scrollable line items, pinned footer with totals + record button. */
 .pos-cart-head { display: flex; align-items: center; justify-content: space-between; }
@@ -573,6 +597,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .invoice-filters { align-items: flex-start; flex-direction: column; }
 }
 @media (max-width: 640px) {
+  .inventory-conflict-form { grid-template-columns: 1fr; }
   .page-header { flex-direction: column; }
   .sale-line { grid-template-columns: 1fr 1fr; }
   .sale-summary__inputs { grid-template-columns: 1fr; }
