@@ -77,7 +77,7 @@ const PointOfSale = () => {
 
   const refreshCatalogue = useCallback(async () => {
     const [productResponse, customerResponse] = await Promise.all([
-      api.get("/products/"),
+      api.get("/products/?page_size=1000"),
       api.get("/customers/?page_size=1000"),
     ]);
     const freshProducts: CachedProduct[] = productResponse.data.results || productResponse.data;

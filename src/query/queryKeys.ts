@@ -1,9 +1,13 @@
 export const queryKeys = {
   products: ["products"] as const,
+  productList: (params: string) => ["products", "list", params] as const,
+  productCategories: ["products", "categories"] as const,
   customers: ["customers"] as const,
+  customerList: (params: string) => ["customers", "list", params] as const,
   customer: (id: string | number) => ["customers", String(id)] as const,
   customerSales: (id: string | number) => ["sales", "customer", String(id)] as const,
   sales: ["sales"] as const,
+  salesList: (params: string) => ["sales", "list", params] as const,
   sale: (id: string | number) => ["sales", String(id)] as const,
   operations: ["operations-summary"] as const,
   notifications: ["notifications"] as const,

@@ -6,6 +6,9 @@ import api from "../../services/api";
 import { useUserRole } from "../../hooks/useUserRole";
 import { queryKeys } from "../../query/queryKeys";
 import { announceDataChange } from "../../query/dataChanges";
+import PaginationControls from "../../components/ui/PaginationControls";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import type { PaginatedResponse } from "../../types/pagination";
 
 interface Product {
   id: number;
@@ -32,16 +35,34 @@ const emptyDraft = {
 const ProductsPage = () => {
   const { canManage } = useUserRole();
   const queryClient = useQueryClient();
-  const [searchParams] = useSearchParams();
-  // Seed from ?q= so the topbar search lands here pre-filtered.
-  const [query, setQuery] = useState(searchParams.get("q") ?? "");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const { data: products = [], isLoading: loading } = useQuery<Product[]>({
-    queryKey: queryKeys.products,
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchParam = searchParams.get("search") ?? searchParams.get("q") ?? "";
+  const [query, setQuery] = useState(searchParam);
+  const debouncedQuery = useDebouncedValue(query);
+  const categoryFilter = searchParams.get("category") ?? "";
+  const stockFilter = searchParams.get("stock") ?? "";
+  const ordering = searchParams.get("ordering") ?? "name";
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const requestedPageSize = Number(searchParams.get("page_size")) || 25;
+  const pageSize = [25, 50, 100].includes(requestedPageSize) ? requestedPageSize : 25;
+  const requestParams = new URLSearchParams({ page: String(page), page_size: String(pageSize), ordering });
+  if (searchParam) requestParams.set("search", searchParam);
+  if (categoryFilter) requestParams.set("category", categoryFilter);
+  if (stockFilter) requestParams.set("stock_status", stockFilter);
+  const requestKey = requestParams.toString();
+
+  const { data, isLoading: loading } = useQuery<PaginatedResponse<Product>>({
+    queryKey: queryKeys.productList(requestKey),
     queryFn: async () => {
-      const response = await api.get("/products/");
-      return response.data.results || response.data;
+      const response = await api.get<PaginatedResponse<Product>>(`/products/?${requestKey}`);
+      return response.data;
     },
+    placeholderData: (previous) => previous,
+  });
+  const products = useMemo(() => data?.results ?? [], [data]);
+  const { data: categories = [] } = useQuery<string[]>({
+    queryKey: queryKeys.productCategories,
+    queryFn: async () => (await api.get<string[]>("/products/categories/")).data,
   });
 
   const [open, setOpen] = useState(false);
@@ -61,29 +82,29 @@ const ProductsPage = () => {
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
 
-  // Existing categories power both the directory filter and form suggestions.
-  const categories = useMemo(
-    () => Array.from(new Set(products.map((p) => p.category).filter(Boolean))).sort(),
-    [products],
-  );
+  const updateDirectoryParams = (updates: Record<string, string>, resetPage = true) => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("q");
+    Object.entries(updates).forEach(([key, value]) => value ? next.set(key, value) : next.delete(key));
+    if (resetPage) next.delete("page");
+    setSearchParams(next);
+  };
 
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const matched = products.filter((product) => {
-      if (categoryFilter && product.category !== categoryFilter) return false;
-      if (q && !product.name.toLowerCase().includes(q)) return false;
-      return true;
-    });
-    return [...matched].sort((a, b) => a.name.localeCompare(b.name));
-  }, [products, query, categoryFilter]);
+  useEffect(() => setQuery(searchParam), [searchParam]);
+
+  useEffect(() => {
+    if (debouncedQuery.trim() === searchParam) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("q");
+    if (debouncedQuery.trim()) next.set("search", debouncedQuery.trim());
+    else next.delete("search");
+    next.delete("page");
+    setSearchParams(next, { replace: true });
+  }, [debouncedQuery, searchParam, searchParams, setSearchParams]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: 0 });
-  }, [query, categoryFilter]);
-
-  useEffect(() => {
-    if (categoryFilter && !categories.includes(categoryFilter)) setCategoryFilter("");
-  }, [categories, categoryFilter]);
+  }, [page, searchParam, categoryFilter, stockFilter, ordering]);
 
   const openAdd = () => {
     setDraft(emptyDraft);
@@ -151,13 +172,9 @@ const ProductsPage = () => {
 
     setSaving(true);
     try {
-      const response = draft.id
-        ? await api.patch<Product>(`/products/${draft.id}/`, data)
-        : await api.post<Product>("/products/", data);
-      queryClient.setQueryData<Product[]>(queryKeys.products, (current = []) => {
-        const without = current.filter((product) => product.id !== response.data.id);
-        return [...without, response.data];
-      });
+      if (draft.id) await api.patch<Product>(`/products/${draft.id}/`, data);
+      else await api.post<Product>("/products/", data);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.products });
       setOpen(false);
       announceDataChange(["products", "operations"]);
     } catch (err: unknown) {
@@ -172,8 +189,7 @@ const ProductsPage = () => {
     if (!draft.id || !window.confirm(`Delete "${draft.name}"?`)) return;
     try {
       await api.delete(`/products/${draft.id}/`);
-      queryClient.setQueryData<Product[]>(queryKeys.products, (current = []) =>
-        current.filter((product) => product.id !== draft.id));
+      await queryClient.invalidateQueries({ queryKey: queryKeys.products });
       setOpen(false);
       announceDataChange(["products", "operations"]);
     } catch {
@@ -196,7 +212,7 @@ const ProductsPage = () => {
             autoFocus
           />
           <div className="search-box__actions">
-            <small>{visible.length}</small>
+            <small>{data?.count ?? 0}</small>
             {canManage && (
               <button className="button button--primary button--small" onClick={openAdd} aria-label="Add product" type="button">
                 <Plus size={16} />
@@ -207,12 +223,33 @@ const ProductsPage = () => {
 
         {categories.length > 0 && (
           <div className="filter-chips directory-filter-chips" role="tablist" aria-label="Product categories">
-            <button type="button" className={`filter-chip${categoryFilter === "" ? " filter-chip--active" : ""}`} onClick={() => setCategoryFilter("")}>All</button>
+            <button type="button" className={`filter-chip${categoryFilter === "" ? " filter-chip--active" : ""}`} onClick={() => updateDirectoryParams({ category: "" })}>All</button>
             {categories.map((category) => (
-              <button key={category} type="button" className={`filter-chip${categoryFilter === category ? " filter-chip--active" : ""}`} onClick={() => setCategoryFilter(category)}>{category}</button>
+              <button key={category} type="button" className={`filter-chip${categoryFilter === category ? " filter-chip--active" : ""}`} onClick={() => updateDirectoryParams({ category })}>{category}</button>
             ))}
           </div>
         )}
+
+        <div className="directory-controls" aria-label="Inventory filters">
+          <label>
+            <span>Stock</span>
+            <select value={stockFilter} onChange={(event) => updateDirectoryParams({ stock: event.target.value })}>
+              <option value="">All stock</option>
+              <option value="in_stock">In stock</option>
+              <option value="low_stock">Low stock</option>
+              <option value="out_of_stock">Out of stock</option>
+            </select>
+          </label>
+          <label>
+            <span>Sort</span>
+            <select value={ordering} onChange={(event) => updateDirectoryParams({ ordering: event.target.value })}>
+              <option value="name">Name</option>
+              <option value="stock,name">Lowest stock</option>
+              <option value="-stock,name">Highest stock</option>
+              <option value="-updated_at,name">Recently updated</option>
+            </select>
+          </label>
+        </div>
 
         {/* Inline add / edit dialog */}
         {open && (
@@ -282,11 +319,11 @@ const ProductsPage = () => {
       <div className="surface list-surface">
         {loading ? (
           <div className="empty-state"><strong>Loading…</strong></div>
-        ) : visible.length === 0 ? (
-          <div className="empty-state"><strong>{query ? "No products match your search" : "No products yet"}</strong></div>
+        ) : products.length === 0 ? (
+          <div className="empty-state"><strong>{searchParam || categoryFilter || stockFilter ? "No products match these filters" : "No products yet"}</strong></div>
         ) : (
           <ul ref={listRef} className="inventory-list app-scroll-region app-scroll-region--inventory" tabIndex={0} aria-label="Inventory products">
-            {visible.map((p) => (
+            {products.map((p) => (
               <li key={p.id} className="inventory-list__row" onClick={() => openEdit(p)}
                   onKeyDown={(e) => { if (e.key === "Enter") openEdit(p); }} tabIndex={canManage ? 0 : undefined} role={canManage ? "button" : undefined}>
                 <div className="inventory-list__content">
@@ -314,6 +351,13 @@ const ProductsPage = () => {
             ))}
           </ul>
         )}
+        <PaginationControls
+          page={page}
+          pageSize={pageSize}
+          count={data?.count ?? 0}
+          onPageChange={(nextPage) => updateDirectoryParams({ page: String(nextPage) }, false)}
+          onPageSizeChange={(nextSize) => updateDirectoryParams({ page_size: String(nextSize) })}
+        />
       </div>
     </div>
   );

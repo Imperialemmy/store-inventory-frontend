@@ -52,6 +52,23 @@
 .submitButton:active { transform: translateY(1px); }
 .authError { margin: 0; padding: 11px 13px; border: 1px solid #f0c8ba; border-radius: 10px; color: #8a3421; background: var(--danger-soft); font-size: .86rem; }
 .authSuccess { margin: 0 0 16px; padding: 11px 13px; border: 1px solid #c2d9ee; border-radius: 10px; color: #15568f; background: #e4eff9; font-size: .86rem; }
+
+:global(:root[data-theme="dark"]) .authHero {
+  background: var(--sidebar);
+  border-right: 1px solid var(--line);
+}
+:global(:root[data-theme="dark"]) .heroLogo { background: var(--brand); }
+:global(:root[data-theme="dark"]) .heroCopy p,
+:global(:root[data-theme="dark"]) .heroFoot { color: var(--ink-700); }
+:global(:root[data-theme="dark"]) .authError {
+  color: #ffc9bc;
+  border-color: #79392b;
+}
+:global(:root[data-theme="dark"]) .authSuccess {
+  color: #d9edff;
+  background: var(--brand-soft);
+  border-color: var(--line-strong);
+}
 .forgotLink { justify-self: center; margin-top: 2px; color: var(--ink-600); font-size: .84rem; text-decoration: none; }
 .forgotLink:hover { color: var(--brand); text-decoration: underline; }
 .authLinks { margin-top: 22px; display: flex; justify-content: center; gap: 8px; color: var(--ink-600); font-size: .88rem; }
