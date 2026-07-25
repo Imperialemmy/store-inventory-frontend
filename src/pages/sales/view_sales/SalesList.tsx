@@ -1,17 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search } from "lucide-react";
+import { AlertTriangle, RefreshCw, Search, ShieldCheck, Trash2 } from "lucide-react";
 import api from "../../../services/api";
 import PageHeader from "../../../components/ui/PageHeader";
 import PaginationControls from "../../../components/ui/PaginationControls";
+import ConfirmDialog from "../../../components/ConfirmDialog";
 import { type Sale, formatNaira, invoiceStatusLabel } from "../salesTypes";
 import { offlineDb } from "../../../offline/db";
-import { SYNC_EVENT } from "../../../offline/sync";
+import { discardSale, preserveAndRetrySale, retrySale, SYNC_EVENT } from "../../../offline/sync";
 import type { QueuedSale } from "../../../offline/types";
 import { queryKeys } from "../../../query/queryKeys";
 import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
 import type { PaginatedResponse } from "../../../types/pagination";
+import { useUserRole } from "../../../hooks/useUserRole";
+
+type LocalResolution = { action: "preserve" | "discard"; sale: QueuedSale };
 
 interface OperationsSummary {
   sales_total: string;
@@ -44,6 +48,7 @@ const formatDateInput = (date: Date) => {
 
 const SalesList = () => {
   const navigate = useNavigate();
+  const userRole = useUserRole();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchParam = searchParams.get("search") ?? "";
   const [query, setQuery] = useState(searchParam);
@@ -61,6 +66,9 @@ const SalesList = () => {
   const requestKey = requestParams.toString();
 
   const [localSales, setLocalSales] = useState<QueuedSale[]>([]);
+  const [localResolution, setLocalResolution] = useState<LocalResolution | null>(null);
+  const [localActionId, setLocalActionId] = useState<string | null>(null);
+  const [localActionError, setLocalActionError] = useState<string | null>(null);
   const { data, isLoading: loading } = useQuery<PaginatedResponse<Sale>>({
     queryKey: queryKeys.salesList(requestKey),
     queryFn: async () => (await api.get<PaginatedResponse<Sale>>(`/sales/?${requestKey}`)).data,
@@ -122,6 +130,36 @@ const SalesList = () => {
     ];
   }, []);
 
+  const retryLocalSale = async (sale: QueuedSale) => {
+    setLocalActionId(sale.client_sale_id);
+    setLocalActionError(null);
+    try {
+      await retrySale(sale.client_sale_id);
+    } catch {
+      setLocalActionError("This device could not retry the sale. Please try again.");
+    } finally {
+      setLocalActionId(null);
+    }
+  };
+
+  const confirmLocalResolution = async () => {
+    if (!localResolution) return;
+    const { action, sale } = localResolution;
+    setLocalActionId(sale.client_sale_id);
+    setLocalActionError(null);
+    try {
+      if (action === "preserve") await preserveAndRetrySale(sale.client_sale_id);
+      else await discardSale(sale.client_sale_id);
+      setLocalResolution(null);
+    } catch {
+      setLocalActionError(action === "preserve"
+        ? "This device could not preserve and sync the sale."
+        : "This device could not remove the local record.");
+    } finally {
+      setLocalActionId(null);
+    }
+  };
+
   return (
     <div className="page-container">
       <PageHeader eyebrow="Invoices" title="Invoices" description="Every sale, its total and outstanding balance." />
@@ -140,19 +178,57 @@ const SalesList = () => {
         <section className="surface local-sales">
           <header><strong>Safely saved on this device</strong><span>{localSales.length}</span></header>
           {localSales.map((sale) => (
-            <div key={sale.client_sale_id}>
-              <span>
-                <strong>{sale.local_reference}</strong>
-                <small>{sale.customer_name} · {new Date(sale.sold_at).toLocaleString()}</small>
-              </span>
-              <span className={`local-sale-state local-sale-state--${sale.state}`}>
-                {sale.state === "needs_attention" ? "Needs attention" : sale.state === "syncing" ? "Syncing" : "Waiting to sync"}
-              </span>
-              <strong>{formatNaira(sale.total)}</strong>
-            </div>
+            <article key={sale.client_sale_id} className="local-sale-entry">
+              <div className="local-sale-entry__summary">
+                <span>
+                  <strong>{sale.local_reference}</strong>
+                  <small>{sale.customer_name} · {new Date(sale.sold_at).toLocaleString()}</small>
+                </span>
+                <span className={`local-sale-state local-sale-state--${sale.state}`}>
+                  {sale.state === "needs_attention" ? "Needs attention" : sale.state === "syncing" ? "Syncing" : "Waiting to sync"}
+                </span>
+                <strong>{formatNaira(sale.total)}</strong>
+              </div>
+              {sale.state === "needs_attention" && (
+                <div className="local-sale-entry__attention">
+                  <div className="local-sale-entry__error" role="alert">
+                    <AlertTriangle size={17} />
+                    <span><strong>Server rejected this record.</strong> {sale.last_error || "Retry to retrieve the server’s reason."}</span>
+                  </div>
+                  <div className="local-sale-entry__actions">
+                    <button type="button" className="button button--ghost button--small" disabled={localActionId === sale.client_sale_id} onClick={() => void retryLocalSale(sale)}>
+                      <RefreshCw size={15} /> Retry
+                    </button>
+                    {userRole.isAdmin && (
+                      <>
+                        <button type="button" className="button button--primary button--small" disabled={localActionId === sale.client_sale_id} onClick={() => setLocalResolution({ action: "preserve", sale })}>
+                          <ShieldCheck size={15} /> Preserve sale
+                        </button>
+                        <button type="button" className="button button--ghost button--small local-sale-entry__discard" disabled={localActionId === sale.client_sale_id} onClick={() => setLocalResolution({ action: "discard", sale })}>
+                          <Trash2 size={15} /> Remove record
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </article>
           ))}
+          {localActionError && <div className="notice notice--error local-sale-entry__action-error" role="alert">{localActionError}</div>}
         </section>
       )}
+
+      <ConfirmDialog
+        open={Boolean(localResolution)}
+        title={localResolution?.action === "preserve" ? "Preserve this completed sale?" : "Remove this local record?"}
+        message={localResolution?.action === "preserve"
+          ? "The server will retain the invoice and payment using the offline-sale policy. Any unavailable stock will become a visible conflict for reconciliation."
+          : "Only continue if the goods were not handed over and no payment was taken. This permanently removes the unsynced record from this device."}
+        confirmLabel={localResolution?.action === "preserve" ? "Preserve and sync" : "Remove record"}
+        busy={Boolean(localResolution && localActionId === localResolution.sale.client_sale_id)}
+        onConfirm={() => void confirmLocalResolution()}
+        onCancel={() => setLocalResolution(null)}
+      />
 
       <section className="surface list-surface">
         <div className="search-box">

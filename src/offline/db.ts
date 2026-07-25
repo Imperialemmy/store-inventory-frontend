@@ -147,6 +147,7 @@ export const offlineDb = {
     all: () => getAll<QueuedSale>(STORES.sales),
     put: (value: QueuedSale) => put(STORES.sales, value),
     get: (id: string) => get<QueuedSale>(STORES.sales, id),
+    remove: (id: string) => remove(STORES.sales, id),
   },
   meta: {
     get: <T>(key: string) => get<{ key: string; value: T }>(STORES.meta, key),

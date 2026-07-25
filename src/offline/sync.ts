@@ -12,13 +12,20 @@ let retryTimer: number | undefined;
 
 const emit = () => window.dispatchEvent(new CustomEvent(SYNC_EVENT));
 
+const errorMessages = (value: unknown): string[] => {
+  if (typeof value === "string" && value.trim()) return [value.trim()];
+  if (Array.isArray(value)) return value.flatMap(errorMessages);
+  if (value && typeof value === "object") {
+    return Object.values(value).flatMap(errorMessages);
+  }
+  return [];
+};
+
 const errorMessage = (error: unknown) => {
   const response = (error as { response?: { data?: unknown } })?.response;
   if (!response?.data) return "The server could not be reached. The sale is safe here.";
-  const data = response.data;
-  if (typeof data === "string") return data;
-  if (typeof data === "object" && data && "detail" in data) return String(data.detail);
-  return "This sale needs attention before it can sync.";
+  const messages = [...new Set(errorMessages(response.data))];
+  return messages.join(" ") || "This sale needs attention before it can sync.";
 };
 
 const retryable = (error: unknown) => {
@@ -76,11 +83,13 @@ const syncOne = async (sale: QueuedSale) => {
     announceDataChange(["sales", "products", "customers", "operations", "notifications"], "offline-sync");
   } catch (error) {
     const retryCount = sale.retry_count + 1;
+    const status = (error as { response?: { status?: number } })?.response?.status;
     await offlineDb.sales.put({
       ...sale,
       state: retryable(error) ? "pending" : "needs_attention",
       retry_count: retryCount,
       last_error: errorMessage(error),
+      last_status: status,
     });
     if (retryable(error)) scheduleRetry(retryCount);
   } finally {
@@ -136,9 +145,45 @@ export const retrySale = async (id: string) => {
     ...sale,
     state: "pending",
     last_error: undefined,
+    last_status: undefined,
   });
   emit();
   await syncPendingSales();
+};
+
+/** Submit a locally completed sale using the offline preservation policy. */
+export const preserveAndRetrySale = async (id: string) => {
+  const sale = await offlineDb.sales.get(id);
+  if (!sale) return;
+  await offlineDb.sales.put({
+    ...sale,
+    offline_created: true,
+    reservation_expires_at: undefined,
+    state: "pending",
+    last_error: undefined,
+    last_status: undefined,
+  });
+  emit();
+  await syncPendingSales();
+};
+
+/** Remove a rejected local record and undo its optimistic cached stock use. */
+export const discardSale = async (id: string) => {
+  const sale = await offlineDb.sales.get(id);
+  if (!sale) return;
+  const returned = new Map<number, number>();
+  sale.items.forEach((item) => returned.set(
+    item.product,
+    (returned.get(item.product) ?? 0) + item.quantity,
+  ));
+  const products = await offlineDb.products.all();
+  await offlineDb.products.replace(products.map((product) => ({
+    ...product,
+    stock: product.stock + (returned.get(product.id) ?? 0),
+  })));
+  await offlineDb.sales.remove(id);
+  emit();
+  announceDataChange(["products", "notifications"], "local-sale-discard");
 };
 
 export const getSyncSnapshot = async (): Promise<SyncSnapshot> => {

@@ -2,7 +2,14 @@ import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import api from "../services/api";
 import { offlineDb, resetOfflineDbForTests } from "./db";
-import { cancelScheduledRetry, recoverInterruptedSync, syncPendingSales } from "./sync";
+import {
+  cancelScheduledRetry,
+  discardSale,
+  preserveAndRetrySale,
+  recoverInterruptedSync,
+  retrySale,
+  syncPendingSales,
+} from "./sync";
 import type { QueuedSale } from "./types";
 
 vi.mock("../services/api", () => ({
@@ -83,7 +90,44 @@ describe("sale synchronization", () => {
       .mockResolvedValueOnce({ data: { id: 8, invoice_number: "INV-00008" } });
     await syncPendingSales();
     expect((await offlineDb.sales.get(bad.client_sale_id))?.state).toBe("needs_attention");
+    expect((await offlineDb.sales.get(bad.client_sale_id))?.last_error).toBe("Invalid sale");
+    expect((await offlineDb.sales.get(bad.client_sale_id))?.last_status).toBe(400);
     expect((await offlineDb.sales.get(good.client_sale_id))?.state).toBe("synced");
+  });
+
+  it("shows nested server validation messages and lets the cashier retry", async () => {
+    const sale = queuedSale("59ad6b35-b7cd-4de3-8602-7d3e6acd0bb5", "needs_attention");
+    await offlineDb.sales.put({ ...sale, last_error: "Old error" });
+    vi.mocked(api.post)
+      .mockRejectedValueOnce({ response: { status: 400, data: { items: [{ quantity: ["Quantity is invalid."] }] } } })
+      .mockResolvedValueOnce({ data: { id: 21, invoice_number: "INV-00021" } });
+
+    await retrySale(sale.client_sale_id);
+    expect((await offlineDb.sales.get(sale.client_sale_id))?.last_error).toBe("Quantity is invalid.");
+    await retrySale(sale.client_sale_id);
+    expect((await offlineDb.sales.get(sale.client_sale_id))?.state).toBe("synced");
+  });
+
+  it("can preserve a completed rejected sale under the offline conflict policy", async () => {
+    const sale = { ...queuedSale("95419ed3-b728-461d-b151-06bd2d6ef1ce", "needs_attention"), offline_created: false };
+    await offlineDb.sales.put(sale);
+    vi.mocked(api.post).mockResolvedValue({ data: { id: 22, invoice_number: "INV-00022" } });
+
+    await preserveAndRetrySale(sale.client_sale_id);
+    expect(vi.mocked(api.post).mock.calls[0][1]).toMatchObject({ offline_created: true });
+    expect((await offlineDb.sales.get(sale.client_sale_id))?.state).toBe("synced");
+  });
+
+  it("removes a rejected local sale and restores its cached stock", async () => {
+    const sale = queuedSale("3cd59b95-8df6-47e1-a104-e34c9f853dcc", "needs_attention");
+    await offlineDb.products.replace([{
+      id: 1, name: "Rice", category: "Food", image: null, price: "1000.00", stock: 9,
+    }]);
+    await offlineDb.sales.put(sale);
+
+    await discardSale(sale.client_sale_id);
+    expect(await offlineDb.sales.get(sale.client_sale_id)).toBeUndefined();
+    expect((await offlineDb.products.all())[0].stock).toBe(10);
   });
 
   it("recovers an interrupted syncing state after restart", async () => {

@@ -68,6 +68,7 @@ export interface QueuedSale {
   state: QueueState;
   retry_count: number;
   last_error?: string;
+  last_status?: number;
   server_sale_id?: number;
   server_invoice_number?: string;
   synced_at?: string;
