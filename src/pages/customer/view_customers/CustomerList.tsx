@@ -13,7 +13,7 @@ import type { PaginatedResponse } from "../../../types/pagination";
 
 const CustomerList = () => {
   const navigate = useNavigate();
-  const { canSell } = useUserRole();
+  const { canManageCustomers } = useUserRole();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchParam = searchParams.get("search") ?? "";
   const [query, setQuery] = useState(searchParam);
@@ -63,7 +63,7 @@ const CustomerList = () => {
         eyebrow="Customer directory"
         title="Customers"
         description="Wholesale and retail customers, their credit and balances."
-        action={canSell ? <Link className="button button--primary" to="/customers/add"><Plus size={16} /> Add customer</Link> : undefined}
+        action={canManageCustomers ? <Link className="button button--primary" to="/customers/add"><Plus size={16} /> Add customer</Link> : undefined}
       />
 
       <section className="surface list-surface">

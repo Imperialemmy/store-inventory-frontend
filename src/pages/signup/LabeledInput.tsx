@@ -10,10 +10,11 @@ interface LabeledInputProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   required?: boolean;
+  error?: string;
 }
 
 const LabeledInput: React.FC<LabeledInputProps> = ({
-  label, name, type = "text", value, onChange, placeholder, required = false,
+  label, name, type = "text", value, onChange, placeholder, required = false, error,
 }) => {
   const isPassword = type === "password";
   const [show, setShow] = useState(false);
@@ -28,6 +29,8 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
       onChange={onChange}
       placeholder={placeholder}
       required={required}
+      aria-invalid={Boolean(error)}
+      aria-describedby={error ? `${name}-error` : undefined}
     />
   );
 
@@ -49,6 +52,7 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
       ) : (
         input
       )}
+      {error && <small id={`${name}-error`} className="field-error">{error}</small>}
     </div>
   );
 };

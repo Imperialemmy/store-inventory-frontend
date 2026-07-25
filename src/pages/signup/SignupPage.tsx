@@ -7,7 +7,7 @@ import styles from '../login/login.module.css';
 const SignupPage = () => {
   const [params] = useSearchParams();
   const isAdmin = params.get('role') === 'admin';
-  const { handleSignup, loading, error } = useSignup(isAdmin);
+  const { handleSignup, loading, error, fieldErrors } = useSignup(isAdmin);
 
   return (
     <main className={styles.authPage}>
@@ -34,7 +34,7 @@ const SignupPage = () => {
           <p className={styles.authIntro}>
             {isAdmin ? 'Enter your details and the admin code.' : 'Sign up, then wait for an admin to approve your account.'}
           </p>
-          <SignupForm onSubmit={handleSignup} loading={loading} error={error} isAdmin={isAdmin} />
+          <SignupForm onSubmit={handleSignup} loading={loading} error={error} fieldErrors={fieldErrors} isAdmin={isAdmin} />
           <div className={styles.authLinks} style={{ justifyContent: 'space-between' }}>
             <Link to={isAdmin ? '/signup' : '/signup?role=admin'}>
               {isAdmin ? 'Sign up as seller instead' : 'Sign up as admin instead'}

@@ -27,5 +27,8 @@ export const useUserRole = () => {
     canManage: role === "admin",
     /** Make sales and manage customers — admins and sellers. */
     canSell: role === "admin" || role === "seller",
+    canManageCustomers: role === "admin" || role === "seller",
+    canDeleteCustomers: role === "admin",
+    canManageReturns: role === "admin",
   };
 };

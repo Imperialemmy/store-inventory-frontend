@@ -1,10 +1,12 @@
 import React from "react";
 import LabeledInput from "./LabeledInput";
+import type { SignupFieldErrors } from "./useSignup";
 
 interface Props {
-  onSubmit: (data: SignupData) => void;
+  onSubmit: (data: SignupData) => Promise<boolean>;
   loading: boolean;
   error: string | null;
+  fieldErrors: SignupFieldErrors;
   isAdmin: boolean;
 }
 
@@ -18,7 +20,7 @@ export interface SignupData {
   admin_code?: string;
 }
 
-const SignupForm: React.FC<Props> = ({ onSubmit, loading, error, isAdmin }) => {
+const SignupForm: React.FC<Props> = ({ onSubmit, loading, error, fieldErrors, isAdmin }) => {
   const [form, setForm] = React.useState({
     username: "",
     first_name: "",
@@ -33,20 +35,21 @@ const SignupForm: React.FC<Props> = ({ onSubmit, loading, error, isAdmin }) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const { admin_code, ...rest } = form;
-    onSubmit(isAdmin ? { ...rest, admin_code } : rest);
+    const succeeded = await onSubmit(isAdmin ? { ...rest, admin_code } : rest);
+    if (!succeeded) setForm((current) => ({ ...current, password: "", admin_code: "" }));
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <LabeledInput label="User name" name="username" value={form.username} onChange={handleChange} required placeholder="e.g. akinfolu123" />
-      <LabeledInput label="First name" name="first_name" value={form.first_name} onChange={handleChange} required placeholder="e.g. Ayomide" />
-      <LabeledInput label="Last name" name="last_name" value={form.last_name} onChange={handleChange} required placeholder="e.g. Adeeko" />
-      <LabeledInput label="Email" name="email" type="email" value={form.email} onChange={handleChange} required placeholder="you@example.com" />
-      <LabeledInput label="Password" name="password" type="password" value={form.password} onChange={handleChange} required placeholder="password" />
-      <LabeledInput label="Phone Number" name="phone_number" type="tel" value={form.phone_number} onChange={handleChange} required placeholder="e.g. 08012345678" />
+      <LabeledInput label="User name" name="username" value={form.username} onChange={handleChange} error={fieldErrors.username} required placeholder="e.g. akinfolu123" />
+      <LabeledInput label="First name" name="first_name" value={form.first_name} onChange={handleChange} error={fieldErrors.first_name} required placeholder="e.g. Ayomide" />
+      <LabeledInput label="Last name" name="last_name" value={form.last_name} onChange={handleChange} error={fieldErrors.last_name} required placeholder="e.g. Adeeko" />
+      <LabeledInput label="Email" name="email" type="email" value={form.email} onChange={handleChange} error={fieldErrors.email} required placeholder="you@example.com" />
+      <LabeledInput label="Password" name="password" type="password" value={form.password} onChange={handleChange} error={fieldErrors.password} required placeholder="Use a strong password" />
+      <LabeledInput label="Phone Number" name="phone_number" type="tel" value={form.phone_number} onChange={handleChange} error={fieldErrors.phone_number} required placeholder="e.g. 08012345678" />
 
       {isAdmin && (
         <LabeledInput
@@ -54,6 +57,7 @@ const SignupForm: React.FC<Props> = ({ onSubmit, loading, error, isAdmin }) => {
           name="admin_code"
           value={form.admin_code}
           onChange={handleChange}
+          error={fieldErrors.admin_code}
           required
           placeholder="Provided by the store owner"
         />

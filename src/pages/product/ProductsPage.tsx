@@ -40,7 +40,7 @@ const ProductsPage = () => {
   const [query, setQuery] = useState(searchParam);
   const debouncedQuery = useDebouncedValue(query);
   const categoryFilter = searchParams.get("category") ?? "";
-  const stockFilter = searchParams.get("stock") ?? "";
+  const stockFilter = searchParams.get("stock") ?? searchParams.get("stock_status") ?? "";
   const ordering = searchParams.get("ordering") ?? "name";
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
   const requestedPageSize = Number(searchParams.get("page_size")) || 25;
@@ -85,6 +85,7 @@ const ProductsPage = () => {
   const updateDirectoryParams = (updates: Record<string, string>, resetPage = true) => {
     const next = new URLSearchParams(searchParams);
     next.delete("q");
+    next.delete("stock_status");
     Object.entries(updates).forEach(([key, value]) => value ? next.set(key, value) : next.delete(key));
     if (resetPage) next.delete("page");
     setSearchParams(next);

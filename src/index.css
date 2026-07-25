@@ -175,26 +175,14 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .app-main { display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
 
-/* Sync confidence is the product's signature: connectivity is visible but calm. */
+/* A quiet Lagos operations clock; sync exceptions now live in notifications. */
 .sync-strip {
   width: 100%; min-height: 38px; padding: 8px clamp(16px, 3vw, 32px);
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  border: 0; border-bottom: 1px solid var(--line); cursor: pointer;
-  color: var(--ink-700); background: var(--brand-soft); font-size: .82rem; font-weight: 750;
+  border: 0; border-bottom: 1px solid var(--line);
+  color: var(--ink-600); background: var(--brand-soft); font-size: .82rem; font-weight: 650;
 }
-.sync-strip small { margin-left: 6px; color: inherit; font-weight: 600; text-decoration: underline; }
-.sync-strip__clock { padding-left: 10px; border-left: 1px solid currentColor; opacity: .78; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-@media (max-width: 560px) { .sync-strip__clock { display: none; } }
-.sync-strip--offline { background: var(--amber-soft); color: #735612; }
-.sync-strip--attention { background: var(--danger-soft); color: var(--danger); }
-.sync-strip--syncing { color: var(--brand-strong); }
-.sync-strip__spin { animation: sync-spin 1s linear infinite; }
-@keyframes sync-spin { to { transform: rotate(360deg); } }
-.sync-details { padding: 8px clamp(16px, 3vw, 32px); background: var(--surface); border-bottom: 1px solid var(--line); }
-.sync-details > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 0; }
-.sync-details span { display: grid; gap: 2px; color: var(--ink-900); }
-.sync-details small { color: var(--ink-600); }
-.sync-details button { min-width: 64px; min-height: 40px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface); color: var(--brand); font-weight: 750; cursor: pointer; }
+.sync-strip--time { font-variant-numeric: tabular-nums; }
 
 /* ---------------- Top bar ---------------- */
 .topbar {
@@ -247,6 +235,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .notif-panel__item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 10px; border-radius: 10px; color: var(--ink-700); font-size: .85rem; line-height: 1.4; text-decoration: none; }
 .notif-panel__item:hover { background: var(--hover); color: var(--ink-900); }
 .notif-panel__item svg { flex: 0 0 auto; margin-top: 2px; color: var(--amber); }
+.field-error { color: var(--danger); font-size: .76rem; font-weight: 650; }
+.field input[aria-invalid="true"] { border-color: var(--danger); }
 
 /* Inline product add/edit popover — anchored under the search card's + button */
 .product-pop { position: absolute; right: 10px; top: calc(100% + 8px); z-index: 30; width: min(340px, calc(100% - 20px)); padding: 16px; }
@@ -414,7 +404,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .local-sale-state { padding: 4px 8px; border-radius: 999px; color: #735612; background: var(--amber-soft); font-size: .72rem; font-weight: 750; }
 .local-sale-state--needs_attention { color: var(--danger); background: var(--danger-soft); }
 .local-sale-state--syncing { color: var(--brand-strong); background: var(--brand-soft); }
-:root[data-theme="dark"] .sync-strip--offline,
 :root[data-theme="dark"] .local-sale-state { color: #ffe09a; }
 .customer-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 18px; }
 .customer-stat { padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
@@ -637,5 +626,4 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
-  .sync-strip__spin { animation: none; }
 }

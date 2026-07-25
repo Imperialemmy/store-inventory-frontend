@@ -356,7 +356,7 @@ const SaleDetail = () => {
             </table>
           )}
 
-          {Number(sale.refund_due) > 0 && userRole.canSell ? (
+          {Number(sale.refund_due) > 0 && userRole.canManageReturns ? (
             <form className="refund-settlement" onSubmit={requestRefund}>
               <div className="refund-settlement__head">
                 <div>
@@ -417,7 +417,7 @@ const SaleDetail = () => {
           </table>
         )}
 
-        {userRole.canSell && sale.items.some((i) => i.quantity - (i.returned_quantity ?? 0) > 0) ? (
+        {userRole.canManageReturns && sale.items.some((i) => i.quantity - (i.returned_quantity ?? 0) > 0) ? (
           <form onSubmit={requestReturn}>
             {returnError && <div className="notice notice--error" role="alert">{returnError}</div>}
             <table className="glass-table" style={{ marginBottom: "14px" }}>

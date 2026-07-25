@@ -52,10 +52,10 @@ const CustomerDetail = () => {
         title={customer.name}
         description={customer.city ? `Customer · ${customer.city}` : "Customer"}
         action={
-          userRole.canSell ? (
+          userRole.canManageCustomers ? (
             <div className="page-actions">
               <Link className="button button--ghost" to={`/customers/${customer.id}/edit`}>Edit</Link>
-              <button className="button button--danger" onClick={handleDelete}>Delete</button>
+              {userRole.canDeleteCustomers && <button className="button button--danger" onClick={handleDelete}>Delete</button>}
             </div>
           ) : undefined
         }

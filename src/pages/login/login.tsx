@@ -9,6 +9,9 @@ const Login = () => {
   const [params] = useSearchParams();
   const pending = params.get("pending") === "1";
   const sessionReplaced = params.get("reason") === "session-replaced";
+  const loggedOut = params.get("reason") === "logged-out";
+  const adminCreated = params.get("reason") === "admin-created";
+  const sellerCreated = params.get("reason") === "seller-created";
   const passwordReset = params.get("reset") === "1";
   const {
     username,
@@ -42,9 +45,19 @@ const Login = () => {
           <h2>Welcome back</h2>
           <p className={styles.authIntro}>Sign in to open today’s desk.</p>
 
-          {pending && (
+          {(pending || sellerCreated) && (
             <p className={styles.authSuccess} role="status">
               Account created. An admin needs to approve it before you can sign in.
+            </p>
+          )}
+          {adminCreated && (
+            <p className={styles.authSuccess} role="status">
+              Admin account created successfully. Sign in to continue.
+            </p>
+          )}
+          {loggedOut && (
+            <p className={styles.authSuccess} role="status">
+              You have been logged out securely.
             </p>
           )}
           {passwordReset && (
