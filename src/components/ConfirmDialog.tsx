@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -16,7 +17,7 @@ const ConfirmDialog = ({
   busy = false, onConfirm, onCancel,
 }: ConfirmDialogProps) => {
   if (!open) return null;
-  return (
+  return createPortal(
     <div className="modal-overlay confirm-overlay" role="dialog" aria-modal="true" aria-label={title}>
       <div className="confirm-card surface">
         <h3 className="confirm-card__title">{title}</h3>
@@ -28,7 +29,8 @@ const ConfirmDialog = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
