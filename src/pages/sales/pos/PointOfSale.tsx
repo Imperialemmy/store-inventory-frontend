@@ -21,6 +21,12 @@ import { announceDataChange, DATA_CHANGE_EVENT, type DataChange } from "../../..
 import { queryClient } from "../../../query/queryClient";
 import { queryKeys } from "../../../query/queryKeys";
 import { scarceOfflineProducts } from "./stockPolicy";
+import {
+  QUANTITY_STEP,
+  clampQuarterQuantity,
+  formatQuantity,
+  maxSellableQuantity,
+} from "../../../utils/quantity";
 
 // Prices are final at this store — the total is exactly the item prices,
 // no VAT or extra fees on top.
@@ -314,27 +320,30 @@ const PointOfSale = () => {
       if (existing) {
         return previous.filter((line) => line.product.id !== product.id);
       }
-      return [...previous, { product, quantity: 1 }];
+      const available = maxSellableQuantity(product.stock);
+      if (available < QUANTITY_STEP) return previous;
+      return [...previous, { product, quantity: Math.min(1, available) }];
     });
   };
 
   const setQty = (id: number, delta: number) =>
-    setCart((previous) => previous
-      .map((line) => line.product.id === id
-        ? { ...line, quantity: Math.min(line.product.stock, line.quantity + delta) }
-        : line)
-      .filter((line) => line.quantity > 0));
+    setCart((previous) => previous.flatMap((line) => {
+      if (line.product.id !== id) return [line];
+      const next = line.quantity + delta;
+      if (next <= 0) return [];
+      return [{ ...line, quantity: clampQuarterQuantity(next, line.product.stock) }];
+    }));
 
   // Type an exact quantity (for bulk orders) — clamped to available stock.
   const setQtyExact = (line: CartLine, value: string) => {
-    const parsed = value.trim() === "" ? 1 : Math.floor(Number(value));
-    const clamped = Math.max(1, Math.min(line.product.stock, Number.isFinite(parsed) ? parsed : 1));
+    const parsed = value.trim() === "" ? QUANTITY_STEP : Number(value);
+    const clamped = clampQuarterQuantity(parsed, line.product.stock);
     setCart((previous) => previous.map((row) =>
       row.product.id === line.product.id ? { ...row, quantity: clamped } : row));
   };
 
   const subtotalKobo = cart.reduce(
-    (sum, line) => sum + Math.round(Number(line.product.price) * 100) * line.quantity,
+    (sum, line) => sum + Math.round(Math.round(Number(line.product.price) * 100) * line.quantity),
     0,
   );
   const total = subtotalKobo / 100;
@@ -541,16 +550,17 @@ const PointOfSale = () => {
                 <div className="pos-cart-row__meta">{formatNaira(line.product.price)} each</div>
               </div>
               <div className="pos-qty">
-                <button type="button" onClick={() => setQty(line.product.id, -1)} aria-label={`Decrease ${line.product.name}`}><Minus size={16} /></button>
+                <button type="button" onClick={() => setQty(line.product.id, -QUANTITY_STEP)} aria-label={`Decrease ${line.product.name} by a quarter`}><Minus size={16} /></button>
                 <input
                   type="number"
-                  min={1}
-                  max={line.product.stock}
+                  min={QUANTITY_STEP}
+                  max={maxSellableQuantity(line.product.stock)}
+                  step={QUANTITY_STEP}
                   value={line.quantity}
                   onChange={(event) => setQtyExact(line, event.target.value)}
                   aria-label={`Quantity of ${line.product.name}`}
                 />
-                <button type="button" onClick={() => setQty(line.product.id, 1)} aria-label={`Increase ${line.product.name}`} disabled={line.quantity >= line.product.stock}><Plus size={16} /></button>
+                <button type="button" onClick={() => setQty(line.product.id, QUANTITY_STEP)} aria-label={`Increase ${line.product.name} by a quarter`} disabled={line.quantity >= maxSellableQuantity(line.product.stock)}><Plus size={16} /></button>
               </div>
             </div>
           ))
@@ -596,7 +606,7 @@ const PointOfSale = () => {
         )}
         <dl className="sale-totals" style={{ maxWidth: "none" }}>
           <div className="sale-totals__grand">
-            <dt>{itemCount} item{itemCount === 1 ? "" : "s"}{customer ? ` · ${customer.name}` : ""}</dt>
+            <dt>{formatQuantity(itemCount)} unit{itemCount === 1 ? "" : "s"}{customer ? ` · ${customer.name}` : ""}</dt>
             <dd>{formatNaira(total)}</dd>
           </div>
         </dl>
@@ -720,7 +730,7 @@ const PointOfSale = () => {
             <ul ref={productListRef} className="pos-list app-scroll-region app-scroll-region--pos" tabIndex={0} aria-label="Products">
               {filtered.map((product) => {
                 const selected = cartQty(product.id) > 0;
-                const out = product.stock <= 0;
+                const out = maxSellableQuantity(product.stock) <= 0;
                 const guarded = product.stock > 0 && product.stock <= offlineThreshold;
                 return (
                   <li key={product.id}>
@@ -737,11 +747,11 @@ const PointOfSale = () => {
                       </span>
                       <span
                         className="pos-list-row__stock"
-                        aria-label={out ? "Out of stock" : `${product.stock} in stock`}
+                        aria-label={out ? "Out of stock" : `${formatQuantity(product.stock)} in stock`}
                       >
                         <span className="pos-list-row__stock-label">Stock</span>
                         <span className="pos-list-row__stock-value" style={{ color: stockColor(product.stock, product.reorder_level) }}>
-                          {out ? "Out" : product.stock}
+                          {out ? "Out" : formatQuantity(product.stock)}
                         </span>
                         {guarded && <span className="pos-list-row__guard">Online approval</span>}
                       </span>
@@ -765,7 +775,7 @@ const PointOfSale = () => {
 
       {cart.length > 0 && (
         <button type="button" className="mobile-cart-bar" onClick={() => setCartOpen(true)}>
-          <span><ShoppingCart size={18} /> {itemCount} item{itemCount === 1 ? "" : "s"}</span>
+          <span><ShoppingCart size={18} /> {formatQuantity(itemCount)} unit{itemCount === 1 ? "" : "s"}</span>
           <strong>{formatNaira(total)}</strong>
           <small>Review sale</small>
         </button>
@@ -776,7 +786,7 @@ const PointOfSale = () => {
         title="Complete this sale?"
         message={
           <>
-            <strong>{itemCount} item{itemCount === 1 ? "" : "s"}</strong> for{" "}
+            <strong>{formatQuantity(itemCount)} unit{itemCount === 1 ? "" : "s"}</strong> for{" "}
             <strong>{customer?.name}</strong> — total <strong>{formatNaira(total)}</strong>
             {" "}({paymentMethod === "pay_later" ? "pay later" : paymentMethod}).
           </>
@@ -821,7 +831,7 @@ const PointOfSale = () => {
                   <li key={entry.id} className="held-row">
                     <div className="held-row__info">
                       <strong>{entry.label}</strong>
-                      <small>{entry.lines.reduce((n, l) => n + l.quantity, 0)} item(s) · {formatNaira(heldTotal(entry))}</small>
+                      <small>{formatQuantity(entry.lines.reduce((n, l) => n + l.quantity, 0))} unit(s) · {formatNaira(heldTotal(entry))}</small>
                     </div>
                     <div className="held-row__actions">
                       <button type="button" className="button button--primary button--small" onClick={() => void resumeSale(entry)}>
@@ -849,7 +859,7 @@ const PointOfSale = () => {
             <tbody>
               {lastSale.items.map((item, index) => (
                 <tr key={index}>
-                  <td>{item.quantity} × {item.name}</td>
+                  <td>{formatQuantity(item.quantity)} × {item.name}</td>
                   <td className="pos-receipt__amt">{formatNaira(Number(item.price) * item.quantity)}</td>
                 </tr>
               ))}

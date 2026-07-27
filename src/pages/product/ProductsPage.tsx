@@ -9,6 +9,7 @@ import { announceDataChange } from "../../query/dataChanges";
 import PaginationControls from "../../components/ui/PaginationControls";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import type { PaginatedResponse } from "../../types/pagination";
+import { formatQuantity } from "../../utils/quantity";
 
 interface Product {
   id: number;
@@ -290,7 +291,7 @@ const ProductsPage = () => {
                 </label>
                 <label className="field">
                   <span>Stock</span>
-                  <input type="number" min="0" value={draft.stock} onChange={(e) => setDraft({ ...draft, stock: e.target.value })} />
+                  <input type="number" min="0" step="0.25" value={draft.stock} onChange={(e) => setDraft({ ...draft, stock: e.target.value })} />
                 </label>
                 <label className="field">
                   <span>Low-stock alert at</span>
@@ -343,7 +344,7 @@ const ProductsPage = () => {
                   </div>
                   <span style={{ display: "flex", gap: 16, alignItems: "center" }}>
                     <span style={{ color: stockColor(p.stock, p.reorder_level), fontSize: ".82rem", fontWeight: p.stock <= p.reorder_level ? 750 : 400, minWidth: 96, textAlign: "right" }}>
-                      Stock {p.stock}{p.stock <= 0 ? " · out" : p.stock <= p.reorder_level ? " · low" : ""}
+                      Stock {formatQuantity(p.stock)}{p.stock <= 0 ? " · out" : p.stock <= p.reorder_level ? " · low" : ""}
                     </span>
                     <strong style={{ color: "var(--ink-900)", minWidth: 88, textAlign: "right" }}>{naira(p.price)}</strong>
                   </span>

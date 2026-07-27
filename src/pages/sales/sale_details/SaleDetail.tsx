@@ -9,6 +9,13 @@ import { useUserRole } from "../../../hooks/useUserRole";
 import { type Sale, PAYMENT_METHODS, formatNaira, invoiceStatusLabel } from "../salesTypes";
 import { queryKeys } from "../../../query/queryKeys";
 import { announceDataChange } from "../../../query/dataChanges";
+import {
+  QUANTITY_STEP,
+  formatQuantity,
+  isQuarterQuantity,
+  maxSellableQuantity,
+  snapQuarterQuantity,
+} from "../../../utils/quantity";
 
 const SaleDetail = () => {
   const { saleId } = useParams<{ saleId: string }>();
@@ -161,11 +168,11 @@ const SaleDetail = () => {
     for (const row of items) {
       const line = sale.items.find((i) => i.id === row.sale_item);
       const returnable = line ? line.quantity - (line.returned_quantity ?? 0) : 0;
-      if (!Number.isInteger(row.quantity) || row.quantity < 0) {
-        return { error: "Return quantities must be whole numbers." };
+      if (!isQuarterQuantity(row.quantity)) {
+        return { error: "Return quantities must be entered in quarter-unit steps (0.25, 0.50, 0.75, 1.00…)." };
       }
       if (row.quantity > returnable) {
-        return { error: `You can return at most ${returnable} × ${line?.product_name}.` };
+        return { error: `You can return at most ${formatQuantity(returnable)} × ${line?.product_name}.` };
       }
     }
     return { items, totalUnits: items.reduce((sum, row) => sum + row.quantity, 0) };
@@ -199,7 +206,7 @@ const SaleDetail = () => {
       setReturnReason("");
       await refreshEverySaleView();
       announceDataChange(["sales", "products", "operations", "notifications"]);
-      setReturnSuccess(`Return recorded — ${totalUnits} unit${totalUnits === 1 ? "" : "s"} credited and restocked.`);
+      setReturnSuccess(`Return recorded — ${formatQuantity(totalUnits ?? 0)} unit${totalUnits === 1 ? "" : "s"} credited and restocked.`);
       // Let the confirmation land, then return to the invoices list.
       setTimeout(() => navigate("/sales/invoices"), 1300);
     } catch (err: unknown) {
@@ -475,7 +482,7 @@ const SaleDetail = () => {
               {sale.credit_notes.map((note) => (
                 <tr key={note.id}>
                   <td>{note.created_at.slice(0, 10)}</td>
-                  <td>{note.items.map((i) => `${i.quantity} × ${i.product_name}`).join(", ")}</td>
+                  <td>{note.items.map((i) => `${formatQuantity(i.quantity)} × ${i.product_name}`).join(", ")}</td>
                   <td>{note.reason || "—"}</td>
                   <td style={{ textAlign: "right" }}>{formatNaira(note.amount)}</td>
                 </tr>
@@ -497,13 +504,14 @@ const SaleDetail = () => {
                   return (
                     <tr key={item.id}>
                       <td>{item.product_name}</td>
-                      <td style={{ textAlign: "right" }}>{item.quantity}</td>
-                      <td style={{ textAlign: "right" }}>{item.returned_quantity ?? 0}</td>
+                      <td style={{ textAlign: "right" }}>{formatQuantity(item.quantity)}</td>
+                      <td style={{ textAlign: "right" }}>{formatQuantity(item.returned_quantity ?? 0)}</td>
                       <td>
                         <input
                           type="number"
                           min={0}
-                          max={returnable}
+                          max={maxSellableQuantity(returnable)}
+                          step={QUANTITY_STEP}
                           disabled={returnable <= 0}
                           value={returnQty[item.id!] ?? ""}
                           onChange={(e) => {
@@ -511,7 +519,8 @@ const SaleDetail = () => {
                             // can't even be typed.
                             const raw = e.target.value;
                             if (raw === "") return setReturnQty((prev) => ({ ...prev, [item.id!]: "" }));
-                            const clamped = Math.max(0, Math.min(returnable, Math.floor(Number(raw) || 0)));
+                            const maximum = maxSellableQuantity(returnable);
+                            const clamped = Math.max(0, Math.min(maximum, snapQuarterQuantity(Number(raw) || 0)));
                             setReturnQty((prev) => ({ ...prev, [item.id!]: String(clamped) }));
                           }}
                           style={{ width: "100%", padding: "8px 10px", border: "1px solid var(--line-strong)", borderRadius: "9px", background: "var(--input-bg)" }}
