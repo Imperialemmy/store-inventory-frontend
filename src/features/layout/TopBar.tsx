@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Menu, Bell, AlertCircle, AlertTriangle, Clock, CloudOff, PackageX, RefreshCw } from "lucide-react";
@@ -8,15 +8,14 @@ import ThemeToggle from "../../components/ThemeToggle";
 import { queryKeys } from "../../query/queryKeys";
 import { getSyncSnapshot, SYNC_EVENT } from "../../offline/sync";
 import type { SyncSnapshot } from "../../offline/types";
+import {
+  buildNotificationGroups,
+  type NotificationGroupKey,
+  type NotificationItem,
+} from "./notificationGroups";
 
 interface TopBarProps {
   onMenu: () => void;
-}
-
-interface NotificationItem {
-  type: "low_stock" | "stock_conflict" | "overdue_invoice" | "expiring_batch" | "unsynced_sale" | "sync_attention";
-  message: string;
-  link: string;
 }
 
 const typeIcon = {
@@ -26,6 +25,14 @@ const typeIcon = {
   expiring_batch: AlertTriangle,
   unsynced_sale: CloudOff,
   sync_attention: AlertCircle,
+};
+
+const groupIcon: Record<NotificationGroupKey, typeof AlertCircle> = {
+  out_of_stock: PackageX,
+  low_stock: AlertTriangle,
+  stock_conflict: AlertCircle,
+  overdue_invoice: Clock,
+  expiring_batch: AlertTriangle,
 };
 
 const emptySync: SyncSnapshot = {
@@ -63,7 +70,7 @@ const TopBar = ({ onMenu }: TopBarProps) => {
       link: "/sales/invoices",
     });
   }
-  const allAlerts = [...localAlerts, ...alerts];
+  const notificationGroups = useMemo(() => buildNotificationGroups(alerts), [alerts]);
   const alertCount = alerts.length + waitingToSync + sync.needsAttention;
 
   useEffect(() => {
@@ -114,24 +121,51 @@ const TopBar = ({ onMenu }: TopBarProps) => {
               <strong>Notifications</strong>
               <span className="customer-chip">{alertCount}</span>
             </div>
-            {allAlerts.length === 0 ? (
+            {localAlerts.length === 0 && notificationGroups.length === 0 ? (
               <p className="notif-panel__empty">All clear — nothing needs attention.</p>
             ) : (
-              <ul className="notif-panel__list">
-                {allAlerts.slice(0, 12).map((alert) => {
-                  const Icon = alert.type === "unsynced_sale" && sync.syncing > 0
-                    ? RefreshCw
-                    : typeIcon[alert.type] ?? AlertTriangle;
-                  return (
-                    <li key={`${alert.type}-${alert.message}`}>
-                      <Link to={alert.link} className="notif-panel__item" onClick={() => setOpen(false)}>
-                        <Icon size={16} />
-                        <span>{alert.message}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+              <div className="notif-panel__body">
+                {localAlerts.length > 0 && (
+                  <ul className="notif-panel__list notif-panel__list--local">
+                    {localAlerts.map((alert) => {
+                      const Icon = alert.type === "unsynced_sale" && sync.syncing > 0
+                        ? RefreshCw
+                        : typeIcon[alert.type] ?? AlertTriangle;
+                      return (
+                        <li key={`${alert.type}-${alert.message}`}>
+                          <Link to={alert.link} className="notif-panel__item notif-panel__item--urgent" onClick={() => setOpen(false)}>
+                            <Icon size={16} />
+                            <span>{alert.message}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+
+                <ul className="notif-panel__groups" aria-label="Notification groups">
+                  {notificationGroups.map((group) => {
+                    const Icon = groupIcon[group.key];
+                    return (
+                      <li key={group.key} className="notif-group">
+                        <Link to={group.link} className="notif-group__summary" onClick={() => setOpen(false)}>
+                          <span className="notif-group__icon"><Icon size={17} /></span>
+                          <span className="notif-group__copy">
+                            <strong>{group.label}</strong>
+                            <small>{group.description}</small>
+                          </span>
+                          <span className="notif-group__count">{group.count}</span>
+                        </Link>
+                        <ul className="notif-group__previews" aria-label={`${group.label} examples`}>
+                          {group.previews.map((alert) => (
+                            <li key={`${alert.type}-${alert.message}`} title={alert.message}>{alert.message}</li>
+                          ))}
+                        </ul>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             )}
           </div>
         )}

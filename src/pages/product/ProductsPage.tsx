@@ -203,7 +203,7 @@ const ProductsPage = () => {
     <div className="page-container page-container--narrow">
       {/* Search bar (its own card so the dialog can float free of the list's clip) */}
       <div className="surface" style={{ position: "relative", marginBottom: "14px" }}>
-        <div className="search-box" style={{ borderBottom: categories.length > 0 ? undefined : "none" }}>
+        <div className="search-box">
           <Search size={18} />
           <input
             type="search"
@@ -223,16 +223,16 @@ const ProductsPage = () => {
           </div>
         </div>
 
-        {categories.length > 0 && (
-          <div className="filter-chips directory-filter-chips" role="tablist" aria-label="Product categories">
-            <button type="button" className={`filter-chip${categoryFilter === "" ? " filter-chip--active" : ""}`} onClick={() => updateDirectoryParams({ category: "" })}>All</button>
-            {categories.map((category) => (
-              <button key={category} type="button" className={`filter-chip${categoryFilter === category ? " filter-chip--active" : ""}`} onClick={() => updateDirectoryParams({ category })}>{category}</button>
-            ))}
-          </div>
-        )}
-
         <div className="directory-controls" aria-label="Inventory filters">
+          <label>
+            <span>Category</span>
+            <select value={categoryFilter} onChange={(event) => updateDirectoryParams({ category: event.target.value })}>
+              <option value="">All categories</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </label>
           <label>
             <span>Stock</span>
             <select value={stockFilter} onChange={(event) => updateDirectoryParams({ stock: event.target.value })}>

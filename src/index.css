@@ -228,13 +228,29 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .topbar__bell { position: relative; border: 0; background: transparent; color: var(--ink-700); cursor: pointer; padding: 8px; border-radius: 10px; }
 .topbar__bell:hover { background: var(--hover); }
 .topbar__bell--alert::after { content: ""; position: absolute; top: 7px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); border: 2px solid #fff; }
-.notif-panel { position: absolute; right: 0; top: calc(100% + 10px); width: min(360px, 84vw); z-index: 70; overflow: hidden; }
+.notif-panel { position: absolute; right: 0; top: calc(100% + 10px); width: min(420px, 90vw); z-index: 70; overflow: hidden; }
 .notif-panel__head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); color: var(--ink-900); }
 .notif-panel__empty { margin: 0; padding: 22px 16px; color: var(--ink-600); font-size: .88rem; }
-.notif-panel__list { margin: 0; padding: 6px; list-style: none; max-height: 340px; overflow-y: auto; }
+.notif-panel__body { max-height: min(560px, calc(100dvh - 110px)); overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.notif-panel__list { margin: 0; padding: 6px; list-style: none; }
+.notif-panel__list--local { border-bottom: 1px solid var(--line); }
 .notif-panel__item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 10px; border-radius: 10px; color: var(--ink-700); font-size: .85rem; line-height: 1.4; text-decoration: none; }
 .notif-panel__item:hover { background: var(--hover); color: var(--ink-900); }
 .notif-panel__item svg { flex: 0 0 auto; margin-top: 2px; color: var(--amber); }
+.notif-panel__item--urgent { margin: 2px; background: var(--amber-soft); }
+.notif-panel__groups, .notif-group__previews { margin: 0; padding: 0; list-style: none; }
+.notif-panel__groups { display: grid; gap: 8px; padding: 10px; }
+.notif-group { overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.notif-group__summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 11px; color: var(--ink-900); text-decoration: none; }
+.notif-group__summary:hover { background: var(--hover); }
+.notif-group__icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; color: var(--amber); background: var(--amber-soft); }
+.notif-group__copy { min-width: 0; display: grid; gap: 2px; }
+.notif-group__copy strong { font-size: .86rem; }
+.notif-group__copy small { overflow: hidden; color: var(--ink-600); font-size: .72rem; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.notif-group__count { min-width: 30px; padding: 4px 8px; border-radius: 999px; color: var(--brand); background: var(--brand-soft); font-size: .72rem; font-weight: 800; text-align: center; }
+.notif-group__previews { display: grid; gap: 4px; padding: 0 11px 10px 53px; }
+.notif-group__previews li { overflow: hidden; color: var(--ink-600); font-size: .7rem; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.notif-group__previews li::before { content: "•"; margin-right: 6px; color: var(--line-strong); }
 .field-error { color: var(--danger); font-size: .76rem; font-weight: 650; }
 .field input[aria-invalid="true"] { border-color: var(--danger); }
 
@@ -346,6 +362,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .pagination__size select, .directory-controls select, .date-range-fields input { min-height: 36px; padding: 6px 30px 6px 10px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface); color: var(--ink-900); font: inherit; }
 .directory-controls { padding: 0 18px 14px; display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
 .directory-controls label, .date-range-fields label { display: flex; align-items: center; gap: 7px; color: var(--ink-600); font-size: .76rem; font-weight: 700; }
+.directory-controls label:first-child select { max-width: min(260px, 44vw); }
 .invoice-filters { padding: 12px 18px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px 18px; border-bottom: 1px solid var(--line); }
 .date-range-fields { display: flex; align-items: center; gap: 10px; }
 .invoice-list__identity { flex-wrap: wrap; }
@@ -467,6 +484,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .inline-customer { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; padding: 10px; border-radius: 10px; background: var(--brand-soft); }
 .inline-customer input { min-height: 42px; padding: 9px 12px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface); color: var(--ink-900); }
 
+/* A compact catalogue rail keeps large imported category sets usable. */
+.catalogue-filter-bar { min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 11px; background: var(--input-bg); }
+.catalogue-category-select { min-width: 0; display: flex; align-items: center; gap: 8px; color: var(--ink-600); font-size: .75rem; font-weight: 750; }
+.catalogue-category-select select { min-width: 180px; max-width: min(320px, 48vw); min-height: 34px; padding: 5px 30px 5px 9px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface); color: var(--ink-900); font: inherit; }
+.catalogue-result-count { flex: 0 0 auto; color: var(--ink-600); font-size: .74rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.catalogue-load-more { display: grid; justify-items: center; gap: 5px; padding: 12px 8px 6px; }
+.catalogue-load-more .button { min-width: 180px; }
+.catalogue-load-more small { color: var(--ink-600); font-size: .7rem; }
+
 /* Shared quick-filter chips for product directories. */
 .filter-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .filter-chip { flex: 0 0 auto; padding: 7px 13px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface); color: var(--ink-700); font-size: .82rem; font-weight: 650; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
@@ -484,7 +510,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .app-scroll-region::-webkit-scrollbar-track { background: transparent; }
 .app-scroll-region::-webkit-scrollbar-thumb { border: 2px solid var(--surface); border-radius: 999px; background: var(--line-strong); }
 .app-scroll-region::-webkit-scrollbar-thumb:hover { background: var(--ink-600); }
-.app-scroll-region--pos { max-height: clamp(320px, calc(100dvh - 480px), 680px); padding-right: 4px; }
+.app-scroll-region--pos { max-height: clamp(320px, calc(100dvh - 430px), 680px); padding-right: 4px; }
 .app-scroll-region--inventory { max-height: clamp(320px, calc(100dvh - 260px), 680px); }
 .app-scroll-region--customers { max-height: clamp(320px, calc(100dvh - 390px), 680px); }
 .app-scroll-region--invoices { max-height: clamp(320px, calc(100dvh - 520px), 680px); }
@@ -622,6 +648,13 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .filter-chips { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
   .filter-chips::-webkit-scrollbar { display: none; }
   .app-scroll-region { max-height: none; overflow-y: visible; scrollbar-gutter: auto; }
+  .app-scroll-region--pos,
+  .app-scroll-region--inventory,
+  .app-scroll-region--customers { max-height: min(56dvh, 560px); overflow-y: auto; scrollbar-gutter: stable; }
+  .catalogue-filter-bar { align-items: stretch; flex-direction: column; }
+  .catalogue-category-select { justify-content: space-between; }
+  .catalogue-category-select select { min-width: 0; max-width: none; width: min(68vw, 260px); }
+  .catalogue-result-count { align-self: flex-end; }
   .inline-customer { grid-template-columns: 1fr; }
   .pos-list-row { grid-template-columns: 1fr auto; gap: 4px 12px; }
   .pos-list-row__main { grid-column: 1; grid-row: 1; }
@@ -643,6 +676,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .date-range-fields label { display: grid; }
   .date-range-fields input { width: 100%; min-width: 0; }
   .directory-controls { justify-content: flex-start; }
+  .directory-controls label { flex: 1 1 145px; justify-content: space-between; }
+  .directory-controls label select,
+  .directory-controls label:first-child select { min-width: 0; max-width: none; width: 100%; }
 }
 
 .print-only { display: none; }

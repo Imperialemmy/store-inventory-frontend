@@ -34,6 +34,7 @@ const WALK_IN_NAME = "Walk-in Customer";
 const SUCCESS_MESSAGE_DURATION_MS = 5_000;
 const DEFAULT_OFFLINE_STOCK_SAFETY_THRESHOLD = 2;
 const RESERVATION_RENEWAL_MS = 60_000;
+const PRODUCT_BATCH_SIZE = 50;
 
 type ReservationStatus = "idle" | "checking" | "reserved" | "offline" | "conflict";
 
@@ -68,6 +69,7 @@ const PointOfSale = () => {
   const [customerOpen, setCustomerOpen] = useState(false);
   const [productQuery, setProductQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [visibleProductCount, setVisibleProductCount] = useState(PRODUCT_BATCH_SIZE);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "transfer" | "pos" | "pay_later">("cash");
   const [productUsage, setProductUsage] = useState<Record<number, number>>({});
@@ -294,7 +296,7 @@ const PointOfSale = () => {
     [products],
   );
 
-  const filtered = useMemo(() => {
+  const filteredProducts = useMemo(() => {
     const query = productQuery.trim().toLowerCase();
     const list = products.filter((product) => {
       if (categoryFilter && product.category !== categoryFilter) return false;
@@ -302,11 +304,16 @@ const PointOfSale = () => {
       return true;
     });
     return [...list]
-      .sort((a, b) => (productUsage[b.id] ?? 0) - (productUsage[a.id] ?? 0) || a.name.localeCompare(b.name))
-      .slice(0, 40);
+      .sort((a, b) => (productUsage[b.id] ?? 0) - (productUsage[a.id] ?? 0) || a.name.localeCompare(b.name));
   }, [products, productQuery, categoryFilter, productUsage]);
 
+  const visibleProducts = useMemo(
+    () => filteredProducts.slice(0, visibleProductCount),
+    [filteredProducts, visibleProductCount],
+  );
+
   useEffect(() => {
+    setVisibleProductCount(PRODUCT_BATCH_SIZE);
     productListRef.current?.scrollTo({ top: 0 });
   }, [productQuery, categoryFilter]);
 
@@ -712,23 +719,29 @@ const PointOfSale = () => {
               <input value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Search products…" />
             </div>
 
-            {productCategories.length > 0 && (
-              <div className="filter-chips" role="tablist" aria-label="Product categories">
-                <button type="button" className={`filter-chip${categoryFilter === "" ? " filter-chip--active" : ""}`} onClick={() => setCategoryFilter("")}>All</button>
-                {productCategories.map((cat) => (
-                  <button key={cat} type="button" className={`filter-chip${categoryFilter === cat ? " filter-chip--active" : ""}`} onClick={() => setCategoryFilter(cat)}>{cat}</button>
-                ))}
-              </div>
-            )}
+            <div className="catalogue-filter-bar" aria-label="Product catalogue filters">
+              <label className="catalogue-category-select">
+                <span>Category</span>
+                <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+                  <option value="">All categories</option>
+                  {productCategories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </label>
+              <span className="catalogue-result-count" aria-live="polite">
+                Showing {Math.min(visibleProductCount, filteredProducts.length)} of {filteredProducts.length}
+              </span>
+            </div>
           </div>
 
           {!hydrated ? (
             <p className="muted">Opening saved products…</p>
-          ) : filtered.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <p className="muted">No saved products match this search.</p>
           ) : (
             <ul ref={productListRef} className="pos-list app-scroll-region app-scroll-region--pos" tabIndex={0} aria-label="Products">
-              {filtered.map((product) => {
+              {visibleProducts.map((product) => {
                 const selected = cartQty(product.id) > 0;
                 const out = maxSellableQuantity(product.stock) <= 0;
                 const guarded = product.stock > 0 && product.stock <= offlineThreshold;
@@ -763,6 +776,18 @@ const PointOfSale = () => {
                   </li>
                 );
               })}
+              {visibleProducts.length < filteredProducts.length && (
+                <li className="catalogue-load-more">
+                  <button
+                    type="button"
+                    className="button button--ghost"
+                    onClick={() => setVisibleProductCount((count) => Math.min(count + PRODUCT_BATCH_SIZE, filteredProducts.length))}
+                  >
+                    Load {Math.min(PRODUCT_BATCH_SIZE, filteredProducts.length - visibleProducts.length)} more
+                  </button>
+                  <small>{filteredProducts.length - visibleProducts.length} products still available</small>
+                </li>
+              )}
             </ul>
           )}
         </div>
