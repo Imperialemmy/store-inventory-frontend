@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { LogOut, Leaf, ShoppingCart, Boxes, Users, ShieldCheck } from "lucide-react";
+import { LogOut, Leaf, ShoppingCart, Boxes, Users, ShieldCheck, History } from "lucide-react";
 import { sidebarNavigation, activeGroupKey, type NavGroup } from "../../config/navigation";
 import { clearSession } from "../../utils/auth";
 import { useUserRole } from "../../hooks/useUserRole";
@@ -14,6 +14,7 @@ const icons = {
   inventory: Boxes,
   customers: Users,
   team: ShieldCheck,
+  activity: History,
 };
 
 interface SidebarProps {
