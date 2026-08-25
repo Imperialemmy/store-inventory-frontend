@@ -12,4 +12,5 @@ export const queryKeys = {
   operations: ["operations-summary"] as const,
   notifications: ["notifications"] as const,
   team: ["team"] as const,
+  activity: (params: string) => ["activity", params] as const,
 };

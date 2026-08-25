@@ -333,6 +333,16 @@ button, a { -webkit-tap-highlight-color: transparent; }
 /* ---------------- Lists ---------------- */
 .page-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; }
 .list-surface { overflow: hidden; }
+
+/* Activity / audit trail */
+.activity-list { list-style: none; margin: 0; padding: 0; }
+.activity-row { display: flex; align-items: flex-start; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--line); }
+.activity-row:last-child { border-bottom: 0; }
+.activity-row__icon { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; }
+.activity-row__body { display: grid; gap: 2px; min-width: 0; }
+.activity-row__summary { color: var(--ink-900); font-size: .92rem; font-weight: 600; }
+.activity-row__meta { color: var(--ink-600); font-size: .76rem; }
+.activity-pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 16px; }
 .search-box { padding: 14px 18px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; color: var(--ink-600); border-bottom: 1px solid var(--line); }
 .search-box input { min-width: 0; padding: 6px 2px; border: 0; outline: none; color: var(--ink-900); background: transparent; font-size: .95rem; }
 .search-box small { padding: 5px 10px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); font-size: .72rem; font-weight: 750; }

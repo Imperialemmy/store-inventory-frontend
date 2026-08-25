@@ -11,6 +11,7 @@ import SalesList from './pages/sales/view_sales/SalesList';
 import PointOfSale from './pages/sales/pos/PointOfSale';
 import SaleDetail from './pages/sales/sale_details/SaleDetail';
 import TeamPage from './pages/team/TeamPage';
+import ActivityPage from './pages/activity/ActivityPage';
 import Login from './pages/login/login';
 import ForgotPassword from './pages/login/ForgotPassword';
 import ResetPassword from './pages/login/ResetPassword';
@@ -48,6 +49,7 @@ const App = () => {
             {/* Admin-only */}
             <Route element={<AdminRoute />}>
               <Route path="/team" element={<TeamPage />} />
+              <Route path="/activity" element={<ActivityPage />} />
             </Route>
           </Route>
         </Route>

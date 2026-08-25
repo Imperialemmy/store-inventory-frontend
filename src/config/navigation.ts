@@ -7,7 +7,7 @@ export interface NavGroup {
   key: string;
   label: string;
   to: string;
-  icon: "sales" | "inventory" | "customers" | "team";
+  icon: "sales" | "inventory" | "customers" | "team" | "activity";
   /** Path prefixes that mark this group active (longest match wins). */
   match: string[];
   sub?: SubNavItem[];
@@ -46,6 +46,14 @@ export const sidebarNavigation: NavGroup[] = [
     to: "/team",
     icon: "team",
     match: ["/team"],
+    adminOnly: true,
+  },
+  {
+    key: "activity",
+    label: "Activity",
+    to: "/activity",
+    icon: "activity",
+    match: ["/activity"],
     adminOnly: true,
   },
 ];
